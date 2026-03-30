@@ -25,8 +25,18 @@ import '../../features/auth/providers/auth_provider.dart';
 
 final pendingRequestsCountProvider = FutureProvider<int>((ref) async {
   try {
-    final res = await DioClient.instance
-        .get(ApiConstants.pendingBookingsCount);
+    final res = await DioClient.instance.get(ApiConstants.pendingBookingsCount);
+    return (res.data['count'] as num).toInt();
+  } catch (_) {
+    return 0;
+  }
+});
+
+// ─── Unread notifications count (badge on Bookings tab) ──────────────────────
+
+final unreadNotificationsCountProvider = FutureProvider<int>((ref) async {
+  try {
+    final res = await DioClient.instance.get(ApiConstants.unreadNotificationsCount);
     return (res.data['count'] as num).toInt();
   } catch (_) {
     return 0;
@@ -110,10 +120,11 @@ class _AppShellState extends ConsumerState<AppShell> {
             ),
             label: 'My Rides',
           ),
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.bookmark_outline),
-              activeIcon: Icon(Icons.bookmark),
-              label: 'Bookings'),
+          BottomNavigationBarItem(
+            icon: _BookingsBadge(child: const Icon(Icons.bookmark_outline)),
+            activeIcon: _BookingsBadge(child: const Icon(Icons.bookmark)),
+            label: 'Bookings',
+          ),
           BottomNavigationBarItem(
             icon: _ProfileBadge(child: const Icon(Icons.person_outline)),
             activeIcon: _ProfileBadge(child: const Icon(Icons.person)),
@@ -139,6 +150,23 @@ class _ProfileBadge extends ConsumerWidget {
     return Badge(
       isLabelVisible: show,
       label: const Text('1'),
+      child: child,
+    );
+  }
+}
+
+// ─── Badge widget for Bookings tab ───────────────────────────────────────────
+
+class _BookingsBadge extends ConsumerWidget {
+  final Widget child;
+  const _BookingsBadge({required this.child});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
+    return Badge(
+      isLabelVisible: count > 0,
+      label: Text(count > 9 ? '9+' : '$count'),
       child: child,
     );
   }

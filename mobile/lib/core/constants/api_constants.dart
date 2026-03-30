@@ -3,10 +3,10 @@ class ApiConstants {
 
   // static const String baseUrl = 'http://10.0.2.2:3000/api/v1'; // Android emulator
   // static const String baseUrl = 'http://localhost:3000/api/v1'; // iOS simulator
-  // static const String baseUrl = 'https://api.ridesync.pk/api/v1'; // Production
-  static const String baseUrl = 'http://192.168.18.135:3000/api/v1'; // Physical device
+  // static const String baseUrl = 'http://192.168.18.135:3000/api/v1'; // Physical device (local)
+  static const String baseUrl = 'http://165.232.135.168:3001/api/v1'; // Production server
 
-  static const String wsUrl = 'http://192.168.18.135:3000';
+  static const String wsUrl = 'http://165.232.135.168:3001';
   static const String wsNamespace = '/realtime';
 
   // Auth
@@ -33,6 +33,8 @@ class ApiConstants {
   static const String myBookings = '/bookings/my';
   static const String rideBookings = '/bookings/ride';
   static const String pendingBookingsCount = '/bookings/pending-count';
+  static const String unreadNotificationsCount = '/notifications/unread-count';
+  static const String markNotificationsRead = '/notifications/mark-all-read';
   static const String pendingPerRide = '/bookings/pending-per-ride';
 
   // Payments

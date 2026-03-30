@@ -7,6 +7,7 @@ import '../../../core/network/dio_client.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/feature_hint.dart';
+import '../../../core/router/app_router.dart';;
 
 final myBookingsProvider = FutureProvider<List<BookingModel>>((ref) async {
   final res = await DioClient.instance.get(ApiConstants.myBookings);
@@ -15,11 +16,30 @@ final myBookingsProvider = FutureProvider<List<BookingModel>>((ref) async {
       .toList();
 });
 
-class MyBookingsScreen extends ConsumerWidget {
+class MyBookingsScreen extends ConsumerStatefulWidget {
   const MyBookingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyBookingsScreen> createState() => _MyBookingsScreenState();
+}
+
+class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Mark notifications as read when this screen opens
+    _markRead();
+  }
+
+  Future<void> _markRead() async {
+    try {
+      await DioClient.instance.patch(ApiConstants.markNotificationsRead);
+      ref.invalidate(unreadNotificationsCountProvider);
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(myBookingsProvider);
 
     return Scaffold(

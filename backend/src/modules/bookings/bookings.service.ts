@@ -11,6 +11,8 @@ import { Ride, RideStatus, RideType } from '../../database/entities/ride.entity'
 import { User } from '../../database/entities/user.entity';
 import { RidesService } from '../rides/rides.service';
 import { PushService } from '../notifications/push.service';
+import { UserNotificationsService } from '../notifications/user-notifications.service';
+import { NotificationType } from '../../database/entities/notification.entity';
 import { CreateBookingDto } from './dto/create-booking.dto';
 
 @Injectable()
@@ -24,6 +26,7 @@ export class BookingsService {
 
     private ridesService: RidesService,
     private pushService: PushService,
+    private notifService: UserNotificationsService,
   ) {}
 
   // ─── Create Booking ───────────────────────────────────────────────────────────
@@ -92,11 +95,13 @@ export class BookingsService {
     // Decrement available seats
     await this.ridesService.decrementSeats(dto.rideId, seats);
 
-    // Notify driver of new booking request
+    // Notify driver of new booking request (push + in-app badge)
+    const driverBody = `${rider.firstName} ${rider.lastName} wants to join your ride`;
+    await this.notifService.create(ride.driverId, 'New Booking Request', driverBody, NotificationType.BOOKING, { bookingId: booking.id, rideId: ride.id });
     if (ride.driver?.fcmToken) {
       await this.pushService.sendToDevice(ride.driver.fcmToken, {
         title: 'New Booking Request',
-        body: `${rider.firstName} ${rider.lastName} wants to join your ride`,
+        body: driverBody,
         data: { bookingId: booking.id, rideId: ride.id, type: 'BOOKING_REQUEST' },
       });
     }
@@ -196,15 +201,17 @@ export class BookingsService {
       confirmedAt: new Date(),
     });
 
-    // Notify rider their booking was confirmed
-    const rider = await this.bookingRepo.findOne({
+    // Notify rider their booking was confirmed (push + in-app badge)
+    const riderBooking = await this.bookingRepo.findOne({
       where: { id: bookingId },
       relations: ['rider'],
     });
-    if (rider?.rider?.fcmToken) {
-      await this.pushService.sendToDevice(rider.rider.fcmToken, {
+    const confirmedBody = `Your seat is confirmed for the ride on ${new Date(booking.ride.departureTime).toLocaleDateString()}`;
+    await this.notifService.create(booking.riderId, 'Booking Confirmed!', confirmedBody, NotificationType.BOOKING, { bookingId: booking.id, type: 'BOOKING_CONFIRMED' });
+    if (riderBooking?.rider?.fcmToken) {
+      await this.pushService.sendToDevice(riderBooking.rider.fcmToken, {
         title: 'Booking Confirmed!',
-        body: `Your seat is confirmed for the ride on ${new Date(booking.ride.departureTime).toLocaleDateString()}`,
+        body: confirmedBody,
         data: { bookingId: booking.id, type: 'BOOKING_CONFIRMED' },
       });
     }

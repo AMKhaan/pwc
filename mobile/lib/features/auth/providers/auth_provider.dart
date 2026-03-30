@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/storage/secure_storage.dart';
@@ -137,6 +138,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> logout() async {
     await SecureStorage.clearAll();
+    // Clear all user-specific SharedPreferences (hints, onboarding flag)
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys().where(
+      (k) => k.startsWith('hint_') || k == 'hasSeenOnboarding',
+    ).toList();
+    for (final key in keys) {
+      await prefs.remove(key);
+    }
     state = const AuthState();
   }
 
