@@ -27,7 +27,7 @@ import StatsCard from '@/components/stats-card';
 import { api } from '@/lib/api';
 import { DashboardStats, PlatformEarnings } from '@/lib/types';
 
-const RIDE_COLORS = ['#2563EB', '#16A34A', '#9333EA'];
+const RIDE_COLORS = ['#6366F1', '#16A34A', '#9333EA'];
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -55,7 +55,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -160,8 +160,8 @@ export default function DashboardPage() {
             <AreaChart data={weeklyData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="rides" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2563EB" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#6366F1" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="bookings" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#16A34A" stopOpacity={0.15} />
@@ -174,7 +174,7 @@ export default function DashboardPage() {
               <Tooltip
                 contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}
               />
-              <Area type="monotone" dataKey="rides" name="Rides" stroke="#2563EB" fill="url(#rides)" strokeWidth={2} />
+              <Area type="monotone" dataKey="rides" name="Rides" stroke="#6366F1" fill="url(#rides)" strokeWidth={2} />
               <Area type="monotone" dataKey="bookings" name="Bookings" stroke="#16A34A" fill="url(#bookings)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>

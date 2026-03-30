@@ -81,7 +81,7 @@ export default function UsersPage() {
             placeholder="Search by name or email..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
         <div className="flex gap-2">
@@ -90,7 +90,7 @@ export default function UsersPage() {
             <select
               value={filterStatus}
               onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-              className="pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
             >
               <option value="">All Status</option>
               <option value="UNVERIFIED">Unverified</option>
@@ -103,7 +103,7 @@ export default function UsersPage() {
           <select
             value={filterType}
             onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
-            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
           >
             <option value="">All Types</option>
             <option value="PROFESSIONAL">Professional</option>
@@ -132,7 +132,7 @@ export default function UsersPage() {
                 <tr>
                   <td colSpan={7} className="text-center py-12 text-slate-400">
                     <div className="flex justify-center">
-                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
                     </div>
                   </td>
                 </tr>
@@ -149,7 +149,7 @@ export default function UsersPage() {
                     <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-semibold text-xs flex items-center justify-center shrink-0">
                             {initials(user)}
                           </div>
                           <div>
@@ -163,7 +163,7 @@ export default function UsersPage() {
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                           user.userType === 'PROFESSIONAL'
-                            ? 'bg-blue-50 text-blue-700'
+                            ? 'bg-indigo-50 text-indigo-700'
                             : 'bg-purple-50 text-purple-700'
                         }`}>
                           {user.userType === 'PROFESSIONAL' ? 'Professional' : 'Student'}
