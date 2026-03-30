@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RideSync Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6366F1',
+            secondary: '#10B981',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .slide-in { animation: slideIn 0.25s ease; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .fade-in { animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased" x-data="app()" x-init="init()">
+
+  <!-- ── LOGIN SCREEN ─────────────────────────────────────────────────────── -->
+  <div x-show="!token" x-cloak class="min-h-screen flex items-center justify-center p-4 fade-in">
+    <div class="bg-white rounded-2xl shadow-lg w-full max-w-sm p-8">
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-14 h-14 bg-primary/10 rounded-2xl mb-4">
+          <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900">RideSync Admin</h1>
+        <p class="text-gray-500 text-sm mt-1">Sign in to manage verifications</p>
+      </div>
+
+      <form @submit.prevent="login()" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input x-model="loginForm.email" type="email" required
+            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+            placeholder="admin@ridesync.pk" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <input x-model="loginForm.password" type="password" required
+            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+            placeholder="••••••••" />
+        </div>
+
+        <div x-show="loginError" class="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2" x-text="loginError"></div>
+
+        <!-- API URL config -->
+        <details class="text-xs text-gray-400">
+          <summary class="cursor-pointer hover:text-gray-600">API Settings</summary>
+          <div class="mt-2">
+            <input x-model="apiBase" type="url"
+              class="w-full px-3 py-2 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
+              placeholder="http://localhost:3000/api/v1" />
+          </div>
+        </details>
+
+        <button type="submit" :disabled="loginLoading"
+          class="w-full bg-primary text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+          <svg x-show="loginLoading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+          <span x-text="loginLoading ? 'Signing in...' : 'Sign In'"></span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── MAIN APP ──────────────────────────────────────────────────────────── -->
+  <div x-show="token" x-cloak class="min-h-screen flex fade-in">
+
+    <!-- Sidebar -->
+    <aside class="w-56 bg-white border-r border-gray-200 flex flex-col fixed h-full z-20">
+      <div class="p-5 border-b border-gray-100">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+          <span class="font-bold text-gray-900 text-sm">RideSync Admin</span>
+        </div>
+      </div>
+
+      <nav class="flex-1 p-3 space-y-1">
+        <button @click="tab='queue'" :class="tab==='queue' ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:bg-gray-50'"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+          </svg>
+          New Users
+          <span x-show="queueTotal > 0"
+            class="ml-auto bg-primary text-white text-xs rounded-full px-1.5 py-0.5 leading-tight"
+            x-text="queueTotal"></span>
+        </button>
+
+        <button @click="tab='users'" :class="tab==='users' ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:bg-gray-50'"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+          All Users
+        </button>
+
+        <button @click="tab='stats'" :class="tab==='stats' ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:bg-gray-50'"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          Dashboard
+        </button>
+      </nav>
+
+      <div class="p-3 border-t border-gray-100">
+        <button @click="logout()"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="ml-56 flex-1 p-6">
+
+      <!-- ── VERIFICATION QUEUE ─────────────────────────────────────────── -->
+      <div x-show="tab==='queue'" x-cloak>
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">New Users</h2>
+            <p class="text-gray-500 text-sm mt-0.5">Review and verify pending user accounts</p>
+          </div>
+          <button @click="loadQueue()" class="flex items-center gap-2 text-sm text-gray-600 hover:text-primary bg-white border border-gray-200 rounded-lg px-3 py-2 transition-colors">
+            <svg class="w-4 h-4" :class="queueLoading && 'animate-spin'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <div x-show="queueLoading" class="flex items-center justify-center py-20">
+          <svg class="animate-spin w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+        </div>
+
+        <!-- Empty -->
+        <div x-show="!queueLoading && queue.length === 0" class="text-center py-20">
+          <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-2xl mb-4">
+            <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <p class="text-gray-500 font-medium">All caught up!</p>
+          <p class="text-gray-400 text-sm mt-1">No pending verifications</p>
+        </div>
+
+        <!-- Queue list -->
+        <div x-show="!queueLoading && queue.length > 0" class="space-y-3">
+          <template x-for="u in queue" :key="u.id">
+            <div class="bg-white rounded-xl border border-gray-200 p-5 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer"
+              @click="openDetail(u)">
+              <div class="flex items-start gap-4">
+                <!-- Avatar -->
+                <div class="flex-shrink-0">
+                  <template x-if="u.avatarUrl">
+                    <img :src="u.avatarUrl" class="w-12 h-12 rounded-xl object-cover" />
+                  </template>
+                  <template x-if="!u.avatarUrl">
+                    <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-lg"
+                      x-text="(u.firstName[0] + u.lastName[0]).toUpperCase()"></div>
+                  </template>
+                </div>
+
+                <!-- Info -->
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-semibold text-gray-900" x-text="u.firstName + ' ' + u.lastName"></span>
+                    <span :class="u.userType === 'PROFESSIONAL' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'"
+                      class="text-xs font-medium px-2 py-0.5 rounded-full" x-text="u.userType"></span>
+                  </div>
+                  <p class="text-gray-500 text-sm mt-0.5" x-text="u.email"></p>
+                  <div class="flex items-center gap-4 mt-2 text-xs text-gray-400 flex-wrap">
+                    <span x-show="u.userType === 'PROFESSIONAL' && u.officeName" x-text="(u.jobTitle || 'Professional') + ' @ ' + u.officeName"></span>
+                    <span x-show="u.userType === 'STUDENT' && u.universityName" x-text="(u.staffType || 'Student') + ' · ' + u.universityName"></span>
+                    <span x-show="u.verificationSubmittedAt" class="flex items-center gap-1">
+                      <svg class="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                      Profile submitted <span x-text="timeAgo(u.verificationSubmittedAt)"></span>
+                    </span>
+                    <span x-show="!u.verificationSubmittedAt" class="flex items-center gap-1 text-amber-500">
+                      <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                      Profile not submitted yet
+                    </span>
+                    <span class="text-gray-300">Joined <span x-text="formatDate(u.createdAt)"></span></span>
+                  </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <button @click.stop="quickApprove(u)"
+                    class="flex items-center gap-1.5 bg-green-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-green-600 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Approve
+                  </button>
+                  <button @click.stop="openDetail(u)"
+                    class="text-xs font-medium text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors">
+                    View Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- ── ALL USERS ──────────────────────────────────────────────────── -->
+      <div x-show="tab==='users'" x-cloak>
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">All Users</h2>
+            <p class="text-gray-500 text-sm mt-0.5" x-text="'Total: ' + (usersData.total || 0) + ' users'"></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input x-model="userSearch" @input.debounce.400ms="loadUsers()" type="text"
+              placeholder="Search name or email..."
+              class="text-sm border border-gray-200 rounded-lg px-3 py-2 w-52 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            <select x-model="userStatusFilter" @change="loadUsers()"
+              class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none">
+              <option value="">All Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="VERIFIED">Verified</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">User</th>
+                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Joined</th>
+                <th class="px-5 py-3"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <template x-for="u in usersData.users || []" :key="u.id">
+                <tr class="hover:bg-gray-50 transition-colors">
+                  <td class="px-5 py-3.5">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs"
+                        x-text="(u.firstName[0] + u.lastName[0]).toUpperCase()"></div>
+                      <div>
+                        <p class="font-medium text-gray-900" x-text="u.firstName + ' ' + u.lastName"></p>
+                        <p class="text-gray-400 text-xs" x-text="u.email"></p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-5 py-3.5">
+                    <span :class="u.userType === 'PROFESSIONAL' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'"
+                      class="text-xs font-medium px-2 py-0.5 rounded-full" x-text="u.userType"></span>
+                  </td>
+                  <td class="px-5 py-3.5">
+                    <span :class="{
+                      'bg-green-100 text-green-700': u.verificationStatus === 'VERIFIED',
+                      'bg-yellow-100 text-yellow-700': u.verificationStatus === 'PENDING',
+                      'bg-red-100 text-red-700': u.verificationStatus === 'REJECTED'
+                    }" class="text-xs font-medium px-2 py-0.5 rounded-full" x-text="u.verificationStatus"></span>
+                  </td>
+                  <td class="px-5 py-3.5 text-gray-400 text-xs" x-text="formatDate(u.createdAt)"></td>
+                  <td class="px-5 py-3.5 text-right">
+                    <button x-show="!u.isSuspended" @click="suspendUser(u)"
+                      class="text-xs text-red-500 hover:text-red-700 font-medium">Suspend</button>
+                    <button x-show="u.isSuspended" @click="unsuspendUser(u)"
+                      class="text-xs text-green-600 hover:text-green-800 font-medium">Unsuspend</button>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+
+          <div x-show="usersLoading" class="flex items-center justify-center py-10">
+            <svg class="animate-spin w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DASHBOARD STATS ────────────────────────────────────────────── -->
+      <div x-show="tab==='stats'" x-cloak>
+        <h2 class="text-xl font-bold text-gray-900 mb-6">Dashboard</h2>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <template x-for="card in statCards()" :key="card.label">
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+              <p class="text-sm text-gray-500" x-text="card.label"></p>
+              <p class="text-3xl font-bold text-gray-900 mt-1" x-text="card.value"></p>
+              <p class="text-xs text-gray-400 mt-1" x-text="card.sub"></p>
+            </div>
+          </template>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ── USER DETAIL SLIDE-OVER ────────────────────────────────────────────── -->
+  <div x-show="selectedUser" x-cloak class="fixed inset-0 z-50 flex">
+    <!-- Backdrop -->
+    <div class="flex-1 bg-black/40" @click="selectedUser = null"></div>
+
+    <!-- Panel -->
+    <div class="w-full max-w-lg bg-white h-full overflow-y-auto shadow-2xl slide-in flex flex-col">
+      <!-- Header -->
+      <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+        <div class="flex items-center gap-3">
+          <template x-if="selectedUser && selectedUser.avatarUrl">
+            <img :src="selectedUser.avatarUrl" class="w-10 h-10 rounded-xl object-cover" />
+          </template>
+          <template x-if="selectedUser && !selectedUser.avatarUrl">
+            <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold"
+              x-text="selectedUser ? (selectedUser.firstName[0] + selectedUser.lastName[0]).toUpperCase() : ''"></div>
+          </template>
+          <div>
+            <p class="font-semibold text-gray-900" x-text="selectedUser ? selectedUser.firstName + ' ' + selectedUser.lastName : ''"></p>
+            <p class="text-xs text-gray-400" x-text="selectedUser ? selectedUser.email : ''"></p>
+          </div>
+        </div>
+        <button @click="selectedUser = null" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="flex-1 px-6 py-5 space-y-6" x-show="selectedUser">
+
+        <!-- Type badge -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span :class="selectedUser && selectedUser.userType === 'PROFESSIONAL' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'"
+            class="text-xs font-semibold px-2.5 py-1 rounded-full" x-text="selectedUser ? selectedUser.userType : ''"></span>
+          <span class="text-xs text-gray-400">Submitted <span x-text="selectedUser ? timeAgo(selectedUser.verificationSubmittedAt) : ''"></span></span>
+        </div>
+
+        <!-- ── PROFESSIONAL FIELDS ── -->
+        <template x-if="selectedUser && selectedUser.userType === 'PROFESSIONAL'">
+          <div class="space-y-4">
+            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Work Information</h3>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-gray-50 rounded-xl p-4">
+                <p class="text-xs text-gray-400 mb-1">Company</p>
+                <p class="font-medium text-gray-900 text-sm" x-text="selectedUser.officeName || '—'"></p>
+              </div>
+              <div class="bg-gray-50 rounded-xl p-4">
+                <p class="text-xs text-gray-400 mb-1">Job Title</p>
+                <p class="font-medium text-gray-900 text-sm" x-text="selectedUser.jobTitle || '—'"></p>
+              </div>
+              <div class="bg-gray-50 rounded-xl p-4 col-span-2">
+                <p class="text-xs text-gray-400 mb-1">CNIC Number</p>
+                <p class="font-medium text-gray-900 text-sm font-mono" x-text="selectedUser.cnicNumber || '—'"></p>
+              </div>
+            </div>
+
+            <!-- CNIC Photo -->
+            <div x-show="selectedUser.cnicPhotoUrl">
+              <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">CNIC Photo</h3>
+              <a :href="selectedUser.cnicPhotoUrl" target="_blank" class="block rounded-xl overflow-hidden border border-gray-200 hover:opacity-90 transition-opacity">
+                <img :src="selectedUser.cnicPhotoUrl" class="w-full h-44 object-cover" />
+                <div class="px-3 py-2 bg-gray-50 text-xs text-gray-400 flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                  </svg>
+                  Open full size
+                </div>
+              </a>
+            </div>
+            <div x-show="!selectedUser.cnicPhotoUrl" class="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-sm text-yellow-700">
+              No CNIC photo uploaded
+            </div>
+
+            <!-- LinkedIn -->
+            <div x-show="selectedUser.linkedinUrl || selectedUser.officeLinkedinUrl">
+              <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">LinkedIn</h3>
+              <div class="space-y-2">
+                <a x-show="selectedUser.linkedinUrl" :href="selectedUser.linkedinUrl" target="_blank"
+                  class="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                  Personal LinkedIn
+                </a>
+                <a x-show="selectedUser.officeLinkedinUrl" :href="selectedUser.officeLinkedinUrl" target="_blank"
+                  class="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                  Company LinkedIn
+                </a>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- ── STUDENT FIELDS ── -->
+        <template x-if="selectedUser && selectedUser.userType === 'STUDENT'">
+          <div class="space-y-4">
+            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">University Information</h3>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-gray-50 rounded-xl p-4 col-span-2">
+                <p class="text-xs text-gray-400 mb-1">University</p>
+                <p class="font-medium text-gray-900 text-sm" x-text="selectedUser.universityName || '—'"></p>
+              </div>
+              <div class="bg-gray-50 rounded-xl p-4">
+                <p class="text-xs text-gray-400 mb-1">Role</p>
+                <p class="font-medium text-gray-900 text-sm" x-text="selectedUser.staffType || 'STUDENT'"></p>
+              </div>
+              <div class="bg-gray-50 rounded-xl p-4">
+                <p class="text-xs text-gray-400 mb-1">Degree / Designation</p>
+                <p class="font-medium text-gray-900 text-sm" x-text="selectedUser.degreeDesignation || '—'"></p>
+              </div>
+            </div>
+
+            <!-- ID Card Photo -->
+            <div x-show="selectedUser.idCardPhotoUrl">
+              <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">University ID Card</h3>
+              <a :href="selectedUser.idCardPhotoUrl" target="_blank" class="block rounded-xl overflow-hidden border border-gray-200 hover:opacity-90 transition-opacity">
+                <img :src="selectedUser.idCardPhotoUrl" class="w-full h-44 object-cover" />
+                <div class="px-3 py-2 bg-gray-50 text-xs text-gray-400 flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                  </svg>
+                  Open full size
+                </div>
+              </a>
+            </div>
+            <div x-show="!selectedUser.idCardPhotoUrl" class="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-sm text-yellow-700">
+              No ID card photo uploaded
+            </div>
+
+            <!-- LinkedIn -->
+            <div x-show="selectedUser.linkedinUrl">
+              <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">LinkedIn</h3>
+              <a :href="selectedUser.linkedinUrl" target="_blank"
+                class="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                Personal LinkedIn
+              </a>
+            </div>
+          </div>
+        </template>
+
+        <!-- Profile photo -->
+        <template x-if="selectedUser && selectedUser.avatarUrl">
+          <div>
+            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Profile Photo</h3>
+            <div class="flex items-center gap-4">
+              <img :src="selectedUser.avatarUrl" class="w-20 h-20 rounded-2xl object-cover border border-gray-200" />
+            </div>
+          </div>
+        </template>
+
+        <!-- Account info -->
+        <div class="border-t border-gray-100 pt-4">
+          <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Account</h3>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <span class="text-gray-400">Phone</span>
+              <p class="text-gray-900 font-medium" x-text="selectedUser ? (selectedUser.phone || '—') : ''"></p>
+            </div>
+            <div>
+              <span class="text-gray-400">Email verified</span>
+              <p class="font-medium" :class="selectedUser && selectedUser.isEmailVerified ? 'text-green-600' : 'text-red-500'"
+                x-text="selectedUser && selectedUser.isEmailVerified ? 'Yes' : 'No'"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer actions -->
+      <div class="sticky bottom-0 bg-white border-t border-gray-200 p-4 flex gap-3">
+        <button @click="approveUser()"
+          :disabled="actionLoading"
+          class="flex-1 flex items-center justify-center gap-2 bg-green-500 text-white font-semibold py-3 rounded-xl hover:bg-green-600 transition-colors disabled:opacity-50">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+          </svg>
+          Approve
+        </button>
+        <button @click="openRejectModal()"
+          :disabled="actionLoading"
+          class="flex-1 flex items-center justify-center gap-2 bg-red-500 text-white font-semibold py-3 rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+          Decline
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REJECT MODAL ───────────────────────────────────────────────────────── -->
+  <div x-show="rejectModal" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50" @click="rejectModal = false"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 fade-in">
+      <h3 class="text-lg font-bold text-gray-900 mb-1">Decline Verification</h3>
+      <p class="text-gray-500 text-sm mb-4">This message will be shown to the user so they know what to fix and resubmit.</p>
+
+      <!-- Quick reasons -->
+      <div class="flex flex-wrap gap-2 mb-3">
+        <template x-for="r in quickReasons" :key="r">
+          <button @click="rejectReason = r"
+            :class="rejectReason === r ? 'bg-red-100 text-red-700 border-red-300' : 'bg-gray-100 text-gray-600 border-gray-200'"
+            class="text-xs border px-3 py-1.5 rounded-full transition-colors" x-text="r"></button>
+        </template>
+      </div>
+
+      <textarea x-model="rejectReason" rows="4"
+        class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-400/50 resize-none"
+        placeholder="e.g. Your CNIC photo is blurry. Please upload a clear front-side photo..."></textarea>
+
+      <div class="flex gap-3 mt-4">
+        <button @click="rejectModal = false"
+          class="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+          Cancel
+        </button>
+        <button @click="confirmReject()"
+          :disabled="!rejectReason.trim() || actionLoading"
+          class="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+          <svg x-show="actionLoading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+          Send Decline Notice
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TOAST ─────────────────────────────────────────────────────────────── -->
+  <div x-show="toast.show" x-cloak
+    class="fixed bottom-6 right-6 z-[70] flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium fade-in"
+    :class="toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'">
+    <svg x-show="toast.type === 'success'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+    </svg>
+    <svg x-show="toast.type === 'error'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <span x-text="toast.message"></span>
+  </div>
+
+  <script>
+    function app() {
+      return {
+        // ── Auth ──────────────────────────────────────────────────────────
+        apiBase: localStorage.getItem('apiBase') || 'http://localhost:3000/api/v1',
+        token: localStorage.getItem('adminToken') || '',
+        loginForm: { email: '', password: '' },
+        loginError: '',
+        loginLoading: false,
+
+        // ── UI state ──────────────────────────────────────────────────────
+        tab: 'queue',
+        toast: { show: false, message: '', type: 'success' },
+
+        // ── Verification queue ─────────────────────────────────────────────
+        queue: [],
+        queueTotal: 0,
+        queueLoading: false,
+        selectedUser: null,
+        actionLoading: false,
+        rejectModal: false,
+        rejectReason: '',
+        quickReasons: [
+          'CNIC photo is unclear. Please upload a clearer image.',
+          'University ID photo is blurry or expired.',
+          'Information does not match the uploaded document.',
+          'Profile photo is missing or unclear.',
+          'Incomplete information. Please fill all required fields.',
+        ],
+
+        // ── Users ─────────────────────────────────────────────────────────
+        usersData: { users: [], total: 0 },
+        usersLoading: false,
+        userSearch: '',
+        userStatusFilter: '',
+
+        // ── Stats ─────────────────────────────────────────────────────────
+        stats: {},
+
+        // ── Init ──────────────────────────────────────────────────────────
+        async init() {
+          if (this.token) {
+            await this.loadAll();
+          }
+        },
+
+        async loadAll() {
+          await Promise.all([this.loadQueue(), this.loadStats(), this.loadUsers()]);
+        },
+
+        // ── Auth ──────────────────────────────────────────────────────────
+        async login() {
+          this.loginError = '';
+          this.loginLoading = true;
+          try {
+            localStorage.setItem('apiBase', this.apiBase);
+            const res = await fetch(`${this.apiBase}/auth/admin/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(this.loginForm),
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.message || 'Login failed');
+            const token = json.data?.token || json.data?.accessToken || json.accessToken || json.token;
+            if (!token) throw new Error('No token received');
+            this.token = token;
+            localStorage.setItem('adminToken', token);
+            await this.loadAll();
+          } catch (e) {
+            this.loginError = e.message;
+          } finally {
+            this.loginLoading = false;
+          }
+        },
+
+        logout() {
+          this.token = '';
+          localStorage.removeItem('adminToken');
+        },
+
+        // ── API helper ────────────────────────────────────────────────────
+        async api(method, path, body) {
+          const res = await fetch(`${this.apiBase}${path}`, {
+            method,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.token}`,
+            },
+            body: body ? JSON.stringify(body) : undefined,
+          });
+          if (res.status === 401) { this.logout(); return null; }
+          const json = await res.json();
+          if (!res.ok) throw new Error(json.message || 'Request failed');
+          return json;
+        },
+
+        // ── Queue ─────────────────────────────────────────────────────────
+        async loadQueue() {
+          this.queueLoading = true;
+          try {
+            const res = await this.api('GET', '/admin/verification-queue?limit=50');
+            this.queue = res?.data?.items || [];
+            this.queueTotal = res?.data?.total || this.queue.length;
+          } catch(e) {
+            this.showToast(e.message, 'error');
+          } finally {
+            this.queueLoading = false;
+          }
+        },
+
+        openDetail(user) {
+          this.selectedUser = user;
+          this.rejectReason = '';
+        },
+
+        async quickApprove(user) {
+          if (!confirm(`Approve ${user.firstName} ${user.lastName}?`)) return;
+          this.selectedUser = user;
+          await this.approveUser();
+        },
+
+        async approveUser() {
+          if (!this.selectedUser) return;
+          this.actionLoading = true;
+          try {
+            await this.api('PATCH', `/admin/verification/${this.selectedUser.id}/approve`);
+            this.showToast(`${this.selectedUser.firstName} approved successfully`, 'success');
+            this.queue = this.queue.filter(u => u.id !== this.selectedUser.id);
+            this.queueTotal = Math.max(0, this.queueTotal - 1);
+            this.selectedUser = null;
+            this.stats.pendingVerifications = Math.max(0, (this.stats.pendingVerifications || 1) - 1);
+            this.stats.verifiedUsers = (this.stats.verifiedUsers || 0) + 1;
+          } catch(e) {
+            this.showToast(e.message, 'error');
+          } finally {
+            this.actionLoading = false;
+          }
+        },
+
+        openRejectModal() {
+          this.rejectReason = '';
+          this.rejectModal = true;
+        },
+
+        async confirmReject() {
+          if (!this.rejectReason.trim() || !this.selectedUser) return;
+          this.actionLoading = true;
+          try {
+            await this.api('PATCH', `/admin/verification/${this.selectedUser.id}/reject`, {
+              reason: this.rejectReason.trim(),
+            });
+            this.showToast(`${this.selectedUser.firstName}'s verification declined`, 'success');
+            this.queue = this.queue.filter(u => u.id !== this.selectedUser.id);
+            this.queueTotal = Math.max(0, this.queueTotal - 1);
+            this.rejectModal = false;
+            this.selectedUser = null;
+            this.stats.pendingVerifications = Math.max(0, (this.stats.pendingVerifications || 1) - 1);
+          } catch(e) {
+            this.showToast(e.message, 'error');
+          } finally {
+            this.actionLoading = false;
+          }
+        },
+
+        // ── Users ─────────────────────────────────────────────────────────
+        async loadUsers() {
+          this.usersLoading = true;
+          try {
+            let url = `/admin/users?limit=20`;
+            if (this.userSearch) url += `&search=${encodeURIComponent(this.userSearch)}`;
+            if (this.userStatusFilter) url += `&verificationStatus=${this.userStatusFilter}`;
+            const res = await this.api('GET', url);
+            this.usersData = res?.data || { users: [], total: 0 };
+          } catch(e) {} finally {
+            this.usersLoading = false;
+          }
+        },
+
+        async suspendUser(u) {
+          if (!confirm(`Suspend ${u.firstName}?`)) return;
+          try {
+            await this.api('PATCH', `/admin/users/${u.id}/suspend`);
+            u.isSuspended = true;
+            this.showToast('User suspended', 'success');
+          } catch(e) { this.showToast(e.message, 'error'); }
+        },
+
+        async unsuspendUser(u) {
+          try {
+            await this.api('PATCH', `/admin/users/${u.id}/unsuspend`);
+            u.isSuspended = false;
+            this.showToast('User unsuspended', 'success');
+          } catch(e) { this.showToast(e.message, 'error'); }
+        },
+
+        // ── Stats ─────────────────────────────────────────────────────────
+        async loadStats() {
+          try {
+            const res = await this.api('GET', '/admin/stats');
+            this.stats = res?.data || {};
+          } catch(e) {}
+        },
+
+        statCards() {
+          return [
+            { label: 'Total Users', value: this.stats.totalUsers || 0, sub: `${this.stats.verifiedUsers || 0} verified` },
+            { label: 'Pending Review', value: this.stats.pendingVerifications || 0, sub: 'Awaiting approval' },
+            { label: 'Total Rides', value: this.stats.totalRides || 0, sub: `${this.stats.activeRides || 0} active now` },
+            { label: 'Total Bookings', value: this.stats.totalBookings || 0, sub: `${this.stats.completedBookings || 0} completed` },
+          ];
+        },
+
+        // ── Helpers ───────────────────────────────────────────────────────
+        showToast(message, type = 'success') {
+          this.toast = { show: true, message, type };
+          setTimeout(() => this.toast.show = false, 3500);
+        },
+
+        timeAgo(dateStr) {
+          if (!dateStr) return '—';
+          const diff = Date.now() - new Date(dateStr).getTime();
+          const m = Math.floor(diff / 60000);
+          if (m < 1) return 'just now';
+          if (m < 60) return `${m}m ago`;
+          const h = Math.floor(m / 60);
+          if (h < 24) return `${h}h ago`;
+          return `${Math.floor(h / 24)}d ago`;
+        },
+
+        formatDate(dateStr) {
+          if (!dateStr) return '—';
+          return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        },
+      };
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ridesync_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - ridesync_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME} -d ${DB_NAME}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ridesync_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: ridesync_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - ridesync_redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD}', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - ridesync_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ridesync_backend
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ridesync_net
+
+volumes:
+  ridesync_pg_data:
+  ridesync_redis_data:
+
+networks:
+  ridesync_net:
+    driver: bridge

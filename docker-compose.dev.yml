@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ridesync_postgres
+    environment:
+      POSTGRES_USER: ridesync
+      POSTGRES_PASSWORD: ridesync_dev_pass
+      POSTGRES_DB: ridesync_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - ridesync_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ridesync -d ridesync_db']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: ridesync_redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - ridesync_redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  ridesync_pg_data:
+  ridesync_redis_data:
