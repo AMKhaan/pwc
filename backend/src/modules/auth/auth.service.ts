@@ -358,10 +358,11 @@ export class AuthService {
     await this.redis.checkOtpRateLimit(email);
     await this.redis.incrementOtpCount(email);
 
-    // Generate 6-digit OTP (fixed in dev for easy testing)
-    const token = this.config.get('app.nodeEnv') === 'development'
-      ? '112233'
-      : Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate 6-digit OTP (fixed when no real email provider is configured)
+    const hasEmailProvider = !!this.config.get<string>('resend.apiKey');
+    const token = hasEmailProvider
+      ? Math.floor(100000 + Math.random() * 900000).toString()
+      : '112233';
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     // Invalidate previous OTPs for this email+type
