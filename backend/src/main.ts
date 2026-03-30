@@ -37,7 +37,11 @@ async function bootstrap() {
 
   app.enableCors({
     origin: process.env.NODE_ENV === 'production'
-      ? ['https://ridesync.pk', 'https://admin.ridesync.pk']
+      ? [
+          'https://ridesync.pk',
+          'https://admin.ridesync.pk',
+          process.env.ADMIN_URL,
+        ].filter(Boolean)
       : '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
