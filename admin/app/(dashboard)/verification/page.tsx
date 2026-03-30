@@ -1,44 +1,41 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { ShieldCheck, ShieldX, Eye, ChevronLeft, ChevronRight, Link2, Mail, Building2, GraduationCap } from 'lucide-react';
+import { ShieldCheck, ShieldX, Eye, ChevronLeft, ChevronRight, FileText, User, Calendar } from 'lucide-react';
 import { api } from '@/lib/api';
 import { AdminUser } from '@/lib/types';
 
 const PAGE_SIZE = 15;
 
-interface VerificationItem extends AdminUser {
-  pendingType: 'COMPANY' | 'UNIVERSITY' | 'LINKEDIN' | null;
-}
-
 export default function VerificationPage() {
-  const [items, setItems] = useState<VerificationItem[]>([]);
+  const [items, setItems] = useState<AdminUser[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [filterType, setFilterType] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [selectedUser, setSelectedUser] = useState<VerificationItem | null>(null);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [showRejectInput, setShowRejectInput] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/admin/verification-queue', {
-        params: { page, limit: PAGE_SIZE, type: filterType || undefined },
+        params: { page, limit: PAGE_SIZE },
       });
       setItems(res.data.data.items);
       setTotal(res.data.data.total);
     } finally {
       setLoading(false);
     }
-  }, [page, filterType]);
+  }, [page]);
 
   useEffect(() => { load(); }, [load]);
 
-  async function handleAction(userId: string, action: 'approve' | 'reject') {
-    setActionLoading(`${userId}-${action}`);
+  async function handleApprove(userId: string) {
+    setActionLoading(`${userId}-approve`);
     try {
-      await api.patch(`/admin/verification/${userId}/${action}`);
+      await api.patch(`/admin/verification/${userId}/approve`);
       setItems((prev) => prev.filter((i) => i.id !== userId));
       setTotal((t) => t - 1);
       setSelectedUser(null);
@@ -47,32 +44,28 @@ export default function VerificationPage() {
     }
   }
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  async function handleReject(userId: string) {
+    if (!rejectReason.trim()) return;
+    setActionLoading(`${userId}-reject`);
+    try {
+      await api.patch(`/admin/verification/${userId}/reject`, { reason: rejectReason });
+      setItems((prev) => prev.filter((i) => i.id !== userId));
+      setTotal((t) => t - 1);
+      setSelectedUser(null);
+      setRejectReason('');
+      setShowRejectInput(false);
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
-  const TypeIcon = ({ type }: { type: string }) => {
-    if (type === 'COMPANY') return <Building2 size={14} className="text-blue-500" />;
-    if (type === 'UNIVERSITY') return <GraduationCap size={14} className="text-purple-500" />;
-    return <Link2 size={14} className="text-sky-500" />;
-  };
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Verification Queue</h1>
         <p className="text-slate-500 text-sm mt-1">{total} pending verifications</p>
-      </div>
-
-      <div className="flex gap-3 mb-6">
-        <select
-          value={filterType}
-          onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
-          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-        >
-          <option value="">All Types</option>
-          <option value="COMPANY">Company Email</option>
-          <option value="UNIVERSITY">University Email</option>
-          <option value="LINKEDIN">LinkedIn</option>
-        </select>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
@@ -85,8 +78,8 @@ export default function VerificationPage() {
                   <tr className="border-b border-slate-200 bg-slate-50">
                     <th className="text-left px-4 py-3 font-semibold text-slate-600">User</th>
                     <th className="text-left px-4 py-3 font-semibold text-slate-600">Type</th>
-                    <th className="text-left px-4 py-3 font-semibold text-slate-600">Email</th>
-                    <th className="text-right px-4 py-3 font-semibold text-slate-600">Actions</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-600">Submitted</th>
+                    <th className="text-right px-4 py-3 font-semibold text-slate-600">Review</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -109,7 +102,7 @@ export default function VerificationPage() {
                     items.map((item) => (
                       <tr
                         key={item.id}
-                        onClick={() => setSelectedUser(item)}
+                        onClick={() => { setSelectedUser(item); setShowRejectInput(false); setRejectReason(''); }}
                         className={`cursor-pointer transition-colors ${
                           selectedUser?.id === item.id ? 'bg-blue-50' : 'hover:bg-slate-50'
                         }`}
@@ -119,19 +112,18 @@ export default function VerificationPage() {
                           <p className="text-xs text-slate-400">{item.email}</p>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-1.5">
-                            {item.pendingType && <TypeIcon type={item.pendingType} />}
-                            <span className="text-xs text-slate-600 capitalize">
-                              {item.pendingType?.toLowerCase() ?? '—'}
-                            </span>
-                          </div>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            item.userType === 'STUDENT'
+                              ? 'bg-purple-100 text-purple-700'
+                              : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {item.userType}
+                          </span>
                         </td>
-                        <td className="px-4 py-3 text-xs text-slate-500 max-w-[140px] truncate">
-                          {item.pendingType === 'COMPANY'
-                            ? item.companyEmail
-                            : item.pendingType === 'UNIVERSITY'
-                            ? item.universityEmail
-                            : 'LinkedIn OAuth'}
+                        <td className="px-4 py-3 text-xs text-slate-500">
+                          {item.verificationSubmittedAt
+                            ? new Date(item.verificationSubmittedAt).toLocaleDateString()
+                            : '—'}
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600">
@@ -175,70 +167,135 @@ export default function VerificationPage() {
                 <p className="text-sm text-slate-400">Select a user to review</p>
               </div>
             ) : (
-              <div>
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-bold text-sm flex items-center justify-center">
-                    {selectedUser.firstName[0]}{selectedUser.lastName[0]}
-                  </div>
+              <div className="space-y-4">
+                {/* Header */}
+                <div className="flex items-center gap-3">
+                  {selectedUser.avatarUrl ? (
+                    <img src={selectedUser.avatarUrl} alt="avatar"
+                      className="w-12 h-12 rounded-full object-cover border border-slate-200" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 font-bold text-sm flex items-center justify-center">
+                      {selectedUser.firstName[0]}{selectedUser.lastName[0]}
+                    </div>
+                  )}
                   <div>
                     <p className="font-semibold text-slate-900">{selectedUser.firstName} {selectedUser.lastName}</p>
                     <p className="text-xs text-slate-400">{selectedUser.email}</p>
                   </div>
                 </div>
 
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">User Type</span>
-                    <span className="font-medium text-slate-700">{selectedUser.userType}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Current Status</span>
-                    <span className="font-medium text-slate-700">{selectedUser.verificationStatus}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Trust Score</span>
-                    <span className="font-medium text-slate-700">{selectedUser.trustScore}/100</span>
-                  </div>
-                  {selectedUser.pendingType !== 'LINKEDIN' && (
-                    <div className="border-t border-slate-100 pt-3">
-                      <p className="text-xs text-slate-400 mb-1">
-                        {selectedUser.pendingType === 'COMPANY' ? 'Company Email' : 'University Email'}
-                      </p>
-                      <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
-                        <Mail size={14} className="text-slate-400" />
-                        <span className="text-sm text-slate-700">
-                          {selectedUser.pendingType === 'COMPANY'
-                            ? selectedUser.companyEmail
-                            : selectedUser.universityEmail}
-                        </span>
-                      </div>
+                {/* Basic info */}
+                <div className="space-y-2 text-sm">
+                  <Row label="Type" value={selectedUser.userType} />
+                  {selectedUser.phone && <Row label="Phone" value={selectedUser.phone} />}
+                  {selectedUser.officeName && <Row label="Office" value={selectedUser.officeName} />}
+                  {selectedUser.universityName && <Row label="University" value={selectedUser.universityName} />}
+                  {selectedUser.companyEmail && <Row label="Company Email" value={selectedUser.companyEmail} />}
+                  {selectedUser.universityEmail && <Row label="University Email" value={selectedUser.universityEmail} />}
+                  {selectedUser.linkedinUrl && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">LinkedIn</span>
+                      <a href={selectedUser.linkedinUrl} target="_blank" rel="noreferrer"
+                        className="text-blue-600 hover:underline text-xs max-w-[160px] truncate">
+                        View Profile
+                      </a>
                     </div>
+                  )}
+                  {selectedUser.cnicNumber && <Row label="CNIC" value={selectedUser.cnicNumber} />}
+                  {selectedUser.verificationSubmittedAt && (
+                    <Row label="Submitted" value={new Date(selectedUser.verificationSubmittedAt).toLocaleString()} />
                   )}
                 </div>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleAction(selectedUser.id, 'approve')}
-                    disabled={!!actionLoading}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-medium rounded-lg text-sm transition-colors"
-                  >
-                    <ShieldCheck size={15} />
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => handleAction(selectedUser.id, 'reject')}
-                    disabled={!!actionLoading}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-red-50 hover:bg-red-100 disabled:opacity-60 text-red-600 font-medium rounded-lg text-sm transition-colors"
-                  >
-                    <ShieldX size={15} />
-                    Reject
-                  </button>
+                {/* Documents */}
+                {(selectedUser.cnicPhotoUrl || selectedUser.idCardPhotoUrl) && (
+                  <div className="border-t border-slate-100 pt-4 space-y-3">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
+                      <FileText size={12} /> Documents
+                    </p>
+                    {selectedUser.cnicPhotoUrl && (
+                      <DocImage label="CNIC Photo" url={selectedUser.cnicPhotoUrl} />
+                    )}
+                    {selectedUser.idCardPhotoUrl && (
+                      <DocImage label="ID Card Photo" url={selectedUser.idCardPhotoUrl} />
+                    )}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="border-t border-slate-100 pt-4 space-y-2">
+                  {showRejectInput ? (
+                    <>
+                      <textarea
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        placeholder="Reason for rejection..."
+                        rows={3}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-400"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleReject(selectedUser.id)}
+                          disabled={!rejectReason.trim() || !!actionLoading}
+                          className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-medium rounded-lg text-sm transition-colors"
+                        >
+                          {actionLoading === `${selectedUser.id}-reject` ? 'Rejecting...' : 'Confirm Reject'}
+                        </button>
+                        <button
+                          onClick={() => { setShowRejectInput(false); setRejectReason(''); }}
+                          className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium rounded-lg text-sm transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleApprove(selectedUser.id)}
+                        disabled={!!actionLoading}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-medium rounded-lg text-sm transition-colors"
+                      >
+                        <ShieldCheck size={15} />
+                        {actionLoading === `${selectedUser.id}-approve` ? 'Approving...' : 'Approve'}
+                      </button>
+                      <button
+                        onClick={() => setShowRejectInput(true)}
+                        disabled={!!actionLoading}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-red-50 hover:bg-red-100 disabled:opacity-60 text-red-600 font-medium rounded-lg text-sm transition-colors"
+                      >
+                        <ShieldX size={15} />
+                        Reject
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between">
+      <span className="text-slate-500">{label}</span>
+      <span className="font-medium text-slate-700 text-right max-w-[180px] truncate">{value}</span>
+    </div>
+  );
+}
+
+function DocImage({ label, url }: { label: string; url: string }) {
+  return (
+    <div>
+      <p className="text-xs text-slate-500 mb-1">{label}</p>
+      <a href={url} target="_blank" rel="noreferrer">
+        <img src={url} alt={label}
+          className="w-full h-32 object-cover rounded-lg border border-slate-200 hover:opacity-90 transition-opacity cursor-pointer" />
+      </a>
     </div>
   );
 }

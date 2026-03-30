@@ -42,6 +42,8 @@ async function seed() {
     verificationStatus: VerificationStatus.VERIFIED,
     isEmailVerified: true,
     isAdmin: true,
+    isActive: true,
+    isSuspended: false,
     trustScore: 100,
   });
 

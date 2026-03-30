@@ -9,9 +9,20 @@ export interface AdminUser {
   trustScore: number;
   isActive: boolean;
   isSuspended: boolean;
+  avatarUrl: string | null;
+  phone: string | null;
   companyEmail: string | null;
   universityEmail: string | null;
   linkedinUrl: string | null;
+  linkedinId: string | null;
+  officeName: string | null;
+  officeLinkedinUrl: string | null;
+  universityName: string | null;
+  cnicNumber: string | null;
+  cnicPhotoUrl: string | null;
+  idCardPhotoUrl: string | null;
+  verificationSubmittedAt: string | null;
+  rejectionReason: string | null;
   createdAt: string;
 }
 
