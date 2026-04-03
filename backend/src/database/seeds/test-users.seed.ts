@@ -163,7 +163,35 @@ async function seed() {
   if (nonAdminUsers.length > 0) {
     const ids = nonAdminUsers.map(u => u.id);
 
-    // Delete in dependency order: rides → vehicles → users
+    // Delete in dependency order (FK constraints):
+    // notifications → bookings → payments → rides → vehicles → email_verifications → users
+    await dataSource.query(
+      `DELETE FROM notifications WHERE "userId" IN (${ids.map((_, i) => `$${i + 1}`).join(',')})`,
+      ids,
+    );
+    await dataSource.query(
+      `DELETE FROM bookings WHERE "passengerId" IN (${ids.map((_, i) => `$${i + 1}`).join(',')})`,
+      ids,
+    );
+    // get ride IDs belonging to these users
+    const rideIds: string[] = (
+      await dataSource.query(
+        `SELECT id FROM rides WHERE "driverId" IN (${ids.map((_, i) => `$${i + 1}`).join(',')})`,
+        ids,
+      )
+    ).map((r: { id: string }) => r.id);
+
+    if (rideIds.length > 0) {
+      await dataSource.query(
+        `DELETE FROM bookings WHERE "rideId" IN (${rideIds.map((_, i) => `$${i + 1}`).join(',')})`,
+        rideIds,
+      );
+      await dataSource.query(
+        `DELETE FROM payments WHERE "rideId" IN (${rideIds.map((_, i) => `$${i + 1}`).join(',')})`,
+        rideIds,
+      );
+    }
+
     await rideRepo
       .createQueryBuilder()
       .delete()
@@ -175,6 +203,11 @@ async function seed() {
       .delete()
       .where('userId IN (:...ids)', { ids })
       .execute();
+
+    await dataSource.query(
+      `DELETE FROM email_verifications WHERE "userId" IN (${ids.map((_, i) => `$${i + 1}`).join(',')})`,
+      ids,
+    );
 
     await userRepo
       .createQueryBuilder()
