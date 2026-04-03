@@ -163,57 +163,35 @@ async function seed() {
   if (nonAdminUsers.length > 0) {
     const ids = nonAdminUsers.map(u => u.id);
 
-    // Delete in dependency order (FK constraints):
-    // notifications → bookings → payments → rides → vehicles → email_verifications → users
-    await dataSource.query(
-      `DELETE FROM notifications WHERE "userId" IN (${ids.map((_, i) => `$${i + 1}`).join(',')})`,
-      ids,
+    // Delete in dependency order (actual DB column names, snake_case):
+    // 1. Get ride IDs belonging to these users
+    const rideRows: { id: string }[] = await dataSource.query(
+      `SELECT id FROM rides WHERE driver_id = ANY($1)`, [ids],
     );
-    await dataSource.query(
-      `DELETE FROM bookings WHERE "passengerId" IN (${ids.map((_, i) => `$${i + 1}`).join(',')})`,
-      ids,
-    );
-    // get ride IDs belonging to these users
-    const rideIds: string[] = (
-      await dataSource.query(
-        `SELECT id FROM rides WHERE "driverId" IN (${ids.map((_, i) => `$${i + 1}`).join(',')})`,
-        ids,
-      )
-    ).map((r: { id: string }) => r.id);
+    const rideIds = rideRows.map(r => r.id);
 
-    if (rideIds.length > 0) {
-      await dataSource.query(
-        `DELETE FROM bookings WHERE "rideId" IN (${rideIds.map((_, i) => `$${i + 1}`).join(',')})`,
-        rideIds,
-      );
-      await dataSource.query(
-        `DELETE FROM payments WHERE "rideId" IN (${rideIds.map((_, i) => `$${i + 1}`).join(',')})`,
-        rideIds,
-      );
+    // 2. Get booking IDs for those rides + bookings made by these users
+    const bookingRows: { id: string }[] = await dataSource.query(
+      `SELECT id FROM bookings WHERE ride_id = ANY($1) OR rider_id = ANY($2)`,
+      [rideIds.length ? rideIds : ['00000000-0000-0000-0000-000000000000'], ids],
+    );
+    const bookingIds = bookingRows.map(b => b.id);
+
+    // 3. payments → bookings → notifications → rides → vehicles → email_verifications → users
+    if (bookingIds.length > 0) {
+      await dataSource.query(`DELETE FROM payments WHERE booking_id = ANY($1)`, [bookingIds]);
+      await dataSource.query(`DELETE FROM bookings WHERE id = ANY($1)`, [bookingIds]);
     }
 
-    await rideRepo
-      .createQueryBuilder()
-      .delete()
-      .where('driverId IN (:...ids)', { ids })
-      .execute();
+    await dataSource.query(`DELETE FROM notifications WHERE user_id = ANY($1)`, [ids]);
 
-    await vehicleRepo
-      .createQueryBuilder()
-      .delete()
-      .where('userId IN (:...ids)', { ids })
-      .execute();
+    if (rideIds.length > 0) {
+      await dataSource.query(`DELETE FROM rides WHERE id = ANY($1)`, [rideIds]);
+    }
 
-    await dataSource.query(
-      `DELETE FROM email_verifications WHERE "userId" IN (${ids.map((_, i) => `$${i + 1}`).join(',')})`,
-      ids,
-    );
-
-    await userRepo
-      .createQueryBuilder()
-      .delete()
-      .where('id IN (:...ids)', { ids })
-      .execute();
+    await dataSource.query(`DELETE FROM vehicles WHERE user_id = ANY($1)`, [ids]);
+    await dataSource.query(`DELETE FROM email_verifications WHERE user_id = ANY($1)`, [ids]);
+    await dataSource.query(`DELETE FROM users WHERE id = ANY($1)`, [ids]);
 
     console.log(`   Removed ${nonAdminUsers.length} existing user(s) and their data.\n`);
   } else {
