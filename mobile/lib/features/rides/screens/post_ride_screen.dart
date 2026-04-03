@@ -7,7 +7,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/feature_hint.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/constants/api_constants.dart';
-import '../../../shared/widgets/primary_button.dart';
 import '../../../shared/widgets/custom_text_field.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'location_picker_screen.dart';
@@ -193,9 +192,63 @@ class _PostRideScreenState extends ConsumerState<PostRideScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Post a Ride')),
+      backgroundColor: AppTheme.background,
       body: Column(
         children: [
+          // ─── Gradient hero header ──────────────────────────────────────
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppTheme.primary, AppTheme.tertiary],
+              ),
+              borderRadius:
+                  BorderRadius.vertical(bottom: Radius.circular(28)),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_rounded,
+                          color: Colors.white),
+                      onPressed: () => context.pop(),
+                      style: IconButton.styleFrom(
+                        backgroundColor:
+                            Colors.white.withValues(alpha: 0.2),
+                        padding: const EdgeInsets.all(8),
+                        minimumSize: const Size(36, 36),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Post a Ride',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        Text(
+                          'Share your route with others',
+                          style: TextStyle(
+                              color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
           const FeatureHint(
             featureKey: 'post_ride',
             icon: Icons.add_road_outlined,
@@ -204,18 +257,21 @@ class _PostRideScreenState extends ConsumerState<PostRideScreen> {
                 'Fill in your route, pick a vehicle, and set departure time. Verified passengers will request to join your ride.',
             color: AppTheme.primary,
           ),
+
           Expanded(
             child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Ride type
-              const Text('Ride Type',
-                  style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
-              const SizedBox(height: 10),
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Ride type
+                    const Text('Ride Type',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textPrimary)),
+                    const SizedBox(height: 10),
               _RideTypeSelector(
                 selected: _rideType,
                 onChanged: (t) => setState(() => _rideType = t),
@@ -227,26 +283,73 @@ class _PostRideScreenState extends ConsumerState<PostRideScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                      color: AppTheme.error.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8)),
-                  child: Text(_error!, style: const TextStyle(color: AppTheme.error, fontSize: 13)),
+                      color: AppTheme.error.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: AppTheme.error.withValues(alpha: 0.3))),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline,
+                          color: AppTheme.error, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(_error!,
+                            style: const TextStyle(
+                                color: AppTheme.error, fontSize: 13)),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
               ],
 
               // Vehicle
               if (_vehicles.isEmpty)
-                OutlinedButton.icon(
-                  onPressed: () async {
+                GestureDetector(
+                  onTap: () async {
                     await context.push('/profile/vehicles');
                     _loadVehicles();
                   },
-                  icon: const Icon(Icons.directions_car),
-                  label: const Text('Add a vehicle first'),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.warning.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: AppTheme.warning.withValues(alpha: 0.3)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.directions_car_outlined,
+                            color: AppTheme.primary, size: 20),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('No vehicle added',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                      color: AppTheme.textPrimary)),
+                              Text('Tap to add a vehicle',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppTheme.textSecondary)),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios,
+                            size: 14, color: AppTheme.textHint),
+                      ],
+                    ),
+                  ),
                 )
               else ...[
                 const Text('Vehicle',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimary)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: _vehicleId,
@@ -268,31 +371,38 @@ class _PostRideScreenState extends ConsumerState<PostRideScreen> {
 
               const SizedBox(height: 20),
 
-              // Origin
-              const Text('From (Pickup)',
-                  style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
-              const SizedBox(height: 8),
+              // Route section label
+              const Text('Route',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary)),
+              const SizedBox(height: 10),
               _LocationField(
                 result: _origin,
-                hint: 'Tap to select pickup location',
+                hint: 'From — pickup location',
+                icon: Icons.radio_button_checked,
+                iconColor: AppTheme.primary,
                 onTap: () => _pickLocation(true),
               ),
-              const SizedBox(height: 16),
-
-              // Destination
-              const Text('To (Destination)',
-                  style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
-              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(left: 17),
+                child: Container(
+                    width: 1.5, height: 10, color: AppTheme.divider),
+              ),
               _LocationField(
                 result: _destination,
-                hint: 'Tap to select destination',
+                hint: 'To — destination',
+                icon: Icons.location_on,
+                iconColor: AppTheme.error,
                 onTap: () => _pickLocation(false),
               ),
               const SizedBox(height: 20),
 
               // Date & time
               const Text('Departure Time',
-                  style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary)),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: _pickDateTime,
@@ -300,17 +410,31 @@ class _PostRideScreenState extends ConsumerState<PostRideScreen> {
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: AppTheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppTheme.divider),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.schedule, color: AppTheme.textSecondary),
-                      const SizedBox(width: 10),
-                      Text(
-                        DateFormat('EEE, MMM d · h:mm a').format(_departureTime),
-                        style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.schedule,
+                            color: AppTheme.primary, size: 18),
                       ),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(
+                        DateFormat('EEE, MMM d · h:mm a').format(_departureTime),
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary),
+                      )),
+                      const Icon(Icons.edit_outlined,
+                          size: 16, color: AppTheme.textHint),
                     ],
                   ),
                 ),
@@ -373,11 +497,50 @@ class _PostRideScreenState extends ConsumerState<PostRideScreen> {
               ),
               const SizedBox(height: 28),
 
-              PrimaryButton(
-                label: 'Post Ride',
-                isLoading: _isLoading,
-                onPressed: _submit,
-                icon: Icons.directions_car,
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppTheme.primary, AppTheme.tertiary],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withValues(alpha: 0.35),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoading ? null : _submit,
+                    icon: _isLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.directions_car_rounded,
+                            color: Colors.white, size: 20),
+                    label: Text(
+                      _isLoading ? 'Posting…' : 'Post Ride',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -396,29 +559,40 @@ class _LocationField extends StatelessWidget {
   final LocationResult? result;
   final String hint;
   final VoidCallback onTap;
+  final IconData icon;
+  final Color iconColor;
 
-  const _LocationField({required this.result, required this.hint, required this.onTap});
+  const _LocationField({
+    required this.result,
+    required this.hint,
+    required this.onTap,
+    this.icon = Icons.location_on_outlined,
+    this.iconColor = AppTheme.primary,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final hasValue = result != null;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(10),
+          color: hasValue
+              ? iconColor.withValues(alpha: 0.04)
+              : AppTheme.surfaceVariant,
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: result != null ? AppTheme.primary : AppTheme.divider,
-            width: result != null ? 1.5 : 1,
+            color: hasValue ? iconColor : AppTheme.divider,
+            width: hasValue ? 1.5 : 1,
           ),
         ),
         child: Row(
           children: [
             Icon(
-              result != null ? Icons.location_on : Icons.location_on_outlined,
-              color: result != null ? AppTheme.primary : AppTheme.textSecondary,
-              size: 20,
+              icon,
+              color: hasValue ? iconColor : AppTheme.textSecondary,
+              size: 18,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -426,13 +600,16 @@ class _LocationField extends StatelessWidget {
                 result?.address ?? hint,
                 style: TextStyle(
                   fontSize: 14,
-                  color: result != null ? AppTheme.textPrimary : AppTheme.textHint,
+                  fontWeight:
+                      hasValue ? FontWeight.w600 : FontWeight.normal,
+                  color: hasValue ? AppTheme.textPrimary : AppTheme.textHint,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppTheme.textHint, size: 18),
+            const Icon(Icons.chevron_right,
+                color: AppTheme.textHint, size: 18),
           ],
         ),
       ),
@@ -468,7 +645,7 @@ class _RideTypeSelector extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
                         color: selected == t['key']
-                            ? (t['color'] as Color).withOpacity(0.1)
+                            ? (t['color'] as Color).withValues(alpha:0.1)
                             : AppTheme.surfaceVariant,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(

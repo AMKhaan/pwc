@@ -17,6 +17,8 @@ import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/vehicles_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/profile/screens/profile_completion_screen.dart';
+import '../../features/profile/screens/about_app_screen.dart';
+import '../../features/bookings/screens/notifications_screen.dart';
 import '../network/dio_client.dart';
 import '../constants/api_constants.dart';
 import '../../features/auth/providers/auth_provider.dart';
@@ -54,57 +56,42 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
-  int _currentIndex = 0;
-  late final PageController _pageController;
-
   static const _tabs = ['/home', '/my-rides', '/bookings', '/profile'];
 
-  // Each tab screen — kept alive so they don't rebuild on swipe.
-  static const _screens = [
-    HomeScreen(),
-    MyRidesScreen(),
-    MyBookingsScreen(),
-    ProfileScreen(),
+  // Use instance-level list (non-const) so each AppShell has its own widget
+  // instances, avoiding const-canonicalization conflicts with GoRouter.
+  final _screens = [
+    const HomeScreen(),
+    const MyRidesScreen(),
+    const MyBookingsScreen(),
+    const ProfileScreen(),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
+  // Derive the active tab from the router's actual current path so that
+  // navigating here from outside the shell (e.g. after login) stays in sync.
+  int get _currentIndex {
+    final path =
+        appRouter.routerDelegate.currentConfiguration.uri.path;
+    final idx = _tabs.indexOf(path);
+    return idx >= 0 ? idx : 0;
   }
 
   void _switchTab(int index) {
-    if (_currentIndex == index) return;
-    setState(() => _currentIndex = index);
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
-    );
     context.go(_tabs[index]);
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentIndex = _currentIndex;
+
     return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        // Disable the default scroll physics so rapid swipes feel snappy.
-        physics: const ClampingScrollPhysics(),
-        onPageChanged: (index) {
-          setState(() => _currentIndex = index);
-          context.go(_tabs[index]);
-        },
+      // IndexedStack keeps all tab States alive without PageView quirks.
+      body: IndexedStack(
+        index: currentIndex,
         children: _screens,
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
+        currentIndex: currentIndex,
         onTap: _switchTab,
         items: [
           const BottomNavigationBarItem(
@@ -274,6 +261,16 @@ final appRouter = GoRouter(
       parentNavigatorKey: _rootNavKey,
       path: '/profile/complete',
       builder: (_, __) => const ProfileCompletionScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavKey,
+      path: '/about',
+      builder: (_, __) => const AboutAppScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavKey,
+      path: '/notifications',
+      builder: (_, __) => const NotificationsScreen(),
     ),
   ],
 

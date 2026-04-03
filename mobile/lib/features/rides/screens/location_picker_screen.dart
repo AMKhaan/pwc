@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../../core/theme/app_theme.dart';
 
 class LocationResult {
   final String address;
@@ -237,16 +238,6 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: [
-          if (_hasSelection && !_reverseGeocoding)
-            TextButton(
-              onPressed: _confirmSelection,
-              child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-        ],
-      ),
       body: Stack(
         children: [
           // ── Map ────────────────────────────────────────────────────────────
@@ -281,9 +272,85 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             ],
           ),
 
+          // ── Floating gradient top bar ─────────────────────────────────────
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [AppTheme.primary, Color(0xFF1E40AF)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: const [
+                      BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 12,
+                          offset: Offset(0, 4)),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_rounded,
+                            color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                        style: IconButton.styleFrom(
+                          backgroundColor:
+                              Colors.white.withValues(alpha: 0.15),
+                          padding: const EdgeInsets.all(6),
+                          minimumSize: const Size(32, 32),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          widget.title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      if (_hasSelection && !_reverseGeocoding)
+                        GestureDetector(
+                          onTap: _confirmSelection,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'Confirm',
+                              style: TextStyle(
+                                color: AppTheme.primary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           // ── Search bar + suggestions ──────────────────────────────────────
           Positioned(
-            top: 12,
+            top: MediaQuery.of(context).padding.top + 76,
             left: 12,
             right: 12,
             child: Column(
@@ -423,14 +490,37 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _reverseGeocoding ? null : _confirmSelection,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      height: 50,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                              colors: [AppTheme.primary, AppTheme.tertiary]),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primary.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        child: const Text('Confirm Location',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: ElevatedButton.icon(
+                          onPressed:
+                              _reverseGeocoding ? null : _confirmSelection,
+                          icon: const Icon(Icons.check_circle_outline,
+                              color: Colors.white, size: 18),
+                          label: const Text('Confirm Location',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                          ),
+                        ),
                       ),
                     ),
                   ],

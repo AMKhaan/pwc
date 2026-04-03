@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 
@@ -33,6 +34,8 @@ class _BackHandler extends StatefulWidget {
 }
 
 class _BackHandlerState extends State<_BackHandler> with WidgetsBindingObserver {
+  static const _shellTabs = {'/home', '/my-rides', '/bookings', '/profile'};
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +46,20 @@ class _BackHandlerState extends State<_BackHandler> with WidgetsBindingObserver 
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  // Save the current tab when the app goes to background so SplashScreen can
+  // restore it if Android kills and recreates the activity.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      final path =
+          appRouter.routerDelegate.currentConfiguration.uri.path;
+      if (_shellTabs.contains(path)) {
+        SharedPreferences.getInstance()
+            .then((p) => p.setString('last_tab', path));
+      }
+    }
   }
 
   @override

@@ -36,107 +36,180 @@ class MyRidesScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-              child: Row(
-                children: [
-                  const Text('My Rides',
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimary)),
-                  const Spacer(),
-                  ElevatedButton.icon(
-                    onPressed: () => context.push('/post-ride'),
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text('Post Ride'),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: Size.zero,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                    ),
-                  ),
-                ],
+      body: CustomScrollView(
+        slivers: [
+          // ─── Gradient header ──────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppTheme.primary, AppTheme.tertiary],
+                ),
+                borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(28)),
               ),
-            ),
-            const FeatureHint(
-              featureKey: 'my_rides',
-              icon: Icons.directions_car_outlined,
-              title: 'Your Posted Rides',
-              description:
-                  'Rides you\'ve posted appear here. Tap a ride to manage it, view booking requests, and start or end the trip.',
-              color: AppTheme.primary,
-            ),
-            Expanded(
-              child: state.when(
-                data: (rides) {
-                  if (rides.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                  child: Row(
+                    children: [
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.directions_car_outlined,
-                              size: 56, color: AppTheme.textHint),
-                          const SizedBox(height: 16),
-                          const Text('No rides posted yet',
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  color: AppTheme.textSecondary)),
-                          const SizedBox(height: 8),
-                          const Text('Post a ride and start sharing',
-                              style: TextStyle(
-                                  fontSize: 13, color: AppTheme.textHint)),
-                          const SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            onPressed: () => context.push('/post-ride'),
-                            icon: const Icon(Icons.add),
-                            label: const Text('Post a Ride'),
-                            style: ElevatedButton.styleFrom(
-                                minimumSize: const Size(160, 44)),
+                          Text(
+                            'My Rides',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          Text(
+                            'Rides you posted',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
-                    );
-                  }
-
-                  // Sort: rides with pending requests first
-                  final sorted = [...rides]..sort((a, b) {
-                      final pa = pendingMap[a.id] ?? 0;
-                      final pb = pendingMap[b.id] ?? 0;
-                      return pb.compareTo(pa);
-                    });
-
-                  return RefreshIndicator(
-                    onRefresh: () async {
-                      ref.invalidate(myRidesProvider);
-                      ref.invalidate(pendingPerRideProvider);
-                    },
-                    child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                      itemCount: sorted.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: 10),
-                      itemBuilder: (_, i) => _MyRideCard(
-                        ride: sorted[i],
-                        pendingCount: pendingMap[sorted[i].id] ?? 0,
+                      const Spacer(),
+                      SizedBox(
+                        height: 42,
+                        child: ElevatedButton.icon(
+                          onPressed: () => context.push('/post-ride'),
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('Post Ride'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppTheme.primary,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  );
-                },
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(
-                    child: Text(e.toString(),
-                        style:
-                            const TextStyle(color: AppTheme.error))),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+
+          // ─── Feature hint ──────────────────────────────────────────────────
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: FeatureHint(
+                featureKey: 'my_rides',
+                icon: Icons.directions_car_outlined,
+                title: 'Your Posted Rides',
+                description:
+                    'Rides you\'ve posted appear here. Tap a ride to manage it, view booking requests, and start or end the trip.',
+                color: AppTheme.primary,
+              ),
+            ),
+          ),
+
+          // ─── Content ───────────────────────────────────────────────────────
+          SliverFillRemaining(
+            child: state.when(
+              data: (rides) {
+                if (rides.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: const Icon(Icons.directions_car_outlined,
+                              size: 40, color: AppTheme.primary),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text('No rides posted yet',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textPrimary)),
+                        const SizedBox(height: 6),
+                        const Text('Post a ride and start sharing',
+                            style: TextStyle(
+                                fontSize: 13, color: AppTheme.textSecondary)),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          height: 48,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  AppTheme.primary,
+                                  AppTheme.tertiary,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: ElevatedButton.icon(
+                              onPressed: () => context.push('/post-ride'),
+                              icon: const Icon(Icons.add,
+                                  color: Colors.white, size: 18),
+                              label: const Text('Post a Ride',
+                                  style: TextStyle(color: Colors.white)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14)),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final sorted = [...rides]..sort((a, b) {
+                    final pa = pendingMap[a.id] ?? 0;
+                    final pb = pendingMap[b.id] ?? 0;
+                    return pb.compareTo(pa);
+                  });
+
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(myRidesProvider);
+                    ref.invalidate(pendingPerRideProvider);
+                  },
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                    itemCount: sorted.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (_, i) => _MyRideCard(
+                      ride: sorted[i],
+                      pendingCount: pendingMap[sorted[i].id] ?? 0,
+                    ),
+                  ),
+                );
+              },
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(
+                  child: Text(e.toString(),
+                      style: const TextStyle(color: AppTheme.error))),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -182,6 +255,8 @@ class _MyRideCardState extends ConsumerState<_MyRideCard> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Cancel Ride'),
         content: const Text('Are you sure you want to cancel this ride?'),
         actions: [
@@ -224,83 +299,83 @@ class _MyRideCardState extends ConsumerState<_MyRideCard> {
     final typeColor = _typeColor(ride.rideType);
     final statusColor = _statusColor(ride.status);
 
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: AppTheme.cardShadow,
+      ),
       child: InkWell(
         onTap: () => context.push('/ride/${ride.id}'),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(18),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Badges row
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: typeColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(ride.rideType,
-                        style: TextStyle(
-                            color: typeColor,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600)),
-                  ),
+                  _Badge(label: ride.rideType, color: typeColor),
                   if (widget.pendingCount > 0) ...[
                     const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade600,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.notifications_active,
-                              size: 11, color: Colors.white),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${widget.pendingCount} new request${widget.pendingCount > 1 ? 's' : ''}',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700),
-                          ),
-                        ],
-                      ),
+                    _Badge(
+                      label:
+                          '${widget.pendingCount} new request${widget.pendingCount > 1 ? 's' : ''}',
+                      color: AppTheme.warning,
+                      icon: Icons.notifications_active,
                     ),
                   ],
                   const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(ride.status,
-                        style: TextStyle(
-                            color: statusColor,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600)),
-                  ),
+                  _Badge(label: ride.status, color: statusColor),
                 ],
               ),
               const SizedBox(height: 12),
-              Text(
-                '${ride.originAddress} → ${ride.destinationAddress}',
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: AppTheme.textPrimary),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+
+              // Route
+              Row(
+                children: [
+                  const Icon(Icons.radio_button_checked,
+                      size: 14, color: AppTheme.primary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      ride.originAddress,
+                      style: const TextStyle(
+                          fontSize: 13, color: AppTheme.textSecondary),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(left: 7),
+                child: Container(
+                    width: 1, height: 12, color: AppTheme.divider),
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.location_on,
+                      size: 14, color: AppTheme.error),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      ride.destinationAddress,
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textPrimary),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 10),
+
+              // Meta row
               Row(
                 children: [
                   const Icon(Icons.schedule,
@@ -323,6 +398,7 @@ class _MyRideCardState extends ConsumerState<_MyRideCard> {
                   ),
                 ],
               ),
+
               if (ride.status == 'ACTIVE') ...[
                 const SizedBox(height: 12),
                 Row(
@@ -337,8 +413,9 @@ class _MyRideCardState extends ConsumerState<_MyRideCard> {
                             style: TextStyle(fontSize: 13)),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.primary,
-                          side:
-                              const BorderSide(color: AppTheme.primary),
+                          side: const BorderSide(color: AppTheme.primary),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
                           padding:
                               const EdgeInsets.symmetric(vertical: 8),
                         ),
@@ -347,22 +424,21 @@ class _MyRideCardState extends ConsumerState<_MyRideCard> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed:
-                            _isCancelling ? null : _cancel,
+                        onPressed: _isCancelling ? null : _cancel,
                         icon: _isCancelling
                             ? const SizedBox(
                                 width: 14,
                                 height: 14,
                                 child: CircularProgressIndicator(
                                     strokeWidth: 2))
-                            : const Icon(Icons.cancel_outlined,
-                                size: 14),
+                            : const Icon(Icons.cancel_outlined, size: 14),
                         label: const Text('Cancel',
                             style: TextStyle(fontSize: 13)),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.error,
-                          side:
-                              const BorderSide(color: AppTheme.error),
+                          side: const BorderSide(color: AppTheme.error),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
                           padding:
                               const EdgeInsets.symmetric(vertical: 8),
                         ),
@@ -378,3 +454,36 @@ class _MyRideCardState extends ConsumerState<_MyRideCard> {
     );
   }
 }
+
+class _Badge extends StatelessWidget {
+  final String label;
+  final Color color;
+  final IconData? icon;
+  const _Badge({required this.label, required this.color, this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 11, color: color),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+                color: color, fontSize: 11, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

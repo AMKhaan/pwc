@@ -1,8 +1,8 @@
-// Seed 10 test users with vehicles and rides across Lahore
+// Seed 5 test users with vehicles and rides
 // Run: npm run seed:test-users
 //
 // ⚠️  Deletes ALL non-admin users (and their rides/vehicles/bookings) first,
-//     then creates 10 fresh test users. Safe to re-run on local or droplet.
+//     then creates 5 fresh test users. Safe to re-run on local or droplet.
 
 import { DataSource } from 'typeorm';
 import { User, UserType, VerificationStatus, Gender, GenderPreference } from '../entities/user.entity';
@@ -12,7 +12,7 @@ import * as bcrypt from 'bcrypt';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-// ─── Lahore locations (real coords) ──────────────────────────────────────────
+// ─── Locations (real coords) ──────────────────────────────────────────────────
 
 const LOCATIONS = {
   dhaPhase5:     { address: 'DHA Phase 5, Lahore',             lat: 31.4712, lng: 74.4013 },
@@ -35,11 +35,8 @@ const LOCATIONS = {
   lums:          { address: 'LUMS, DHA, Lahore',               lat: 31.4715, lng: 74.4029 },
   fast:          { address: 'FAST NUCES, Faisal Town, Lahore', lat: 31.4819, lng: 74.4013 },
   uet:           { address: 'UET Lahore, Grand Trunk Road',    lat: 31.5153, lng: 74.3249 },
-  comsats:       { address: 'COMSATS Lahore, Defence Road',    lat: 31.4556, lng: 74.3191 },
   gardenTown:    { address: 'Garden Town, Lahore',             lat: 31.5056, lng: 74.3207 },
   shadmanColony: { address: 'Shadman Colony, Lahore',          lat: 31.5263, lng: 74.3149 },
-  ferozepur:     { address: 'Ferozepur Road, Lahore',          lat: 31.4360, lng: 74.3080 },
-  raiwind:       { address: 'Raiwind Road, Lahore',            lat: 31.4138, lng: 74.3563 },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -67,54 +64,34 @@ function dist(o: { lat: number; lng: number }, d: { lat: number; lng: number }):
 
 const USERS = [
   {
-    n: 1, firstName: 'Ali',    lastName: 'Hassan',   gender: Gender.MALE,   userType: UserType.PROFESSIONAL,
+    n: 1, firstName: 'Test', lastName: '1', gender: Gender.MALE, userType: UserType.PROFESSIONAL,
     jobTitle: 'Software Engineer', officeName: 'Systems Limited', cnicNumber: '3520112345671',
-    vehicle: { make: 'Toyota',   model: 'Corolla',  year: 2021, color: 'White',  plate: 'LHR-2021-AA', seats: 3, fuel: FuelType.PETROL,  cc: 1800 },
+    phone: '03001000001',
+    vehicle: { make: 'Toyota', model: 'Corolla', year: 2021, color: 'White',  plate: 'LHR-2021-AA', seats: 3, fuel: FuelType.PETROL, cc: 1800 },
   },
   {
-    n: 2, firstName: 'Sara',   lastName: 'Khan',     gender: Gender.FEMALE, userType: UserType.PROFESSIONAL,
-    jobTitle: 'Product Manager',   officeName: 'Netsol Technologies', cnicNumber: '3520212345672',
-    vehicle: { make: 'Honda',    model: 'Civic',    year: 2022, color: 'Silver', plate: 'LHR-2022-BB', seats: 3, fuel: FuelType.PETROL,  cc: 1500 },
+    n: 2, firstName: 'Test', lastName: '2', gender: Gender.FEMALE, userType: UserType.PROFESSIONAL,
+    jobTitle: 'Product Manager', officeName: 'Netsol Technologies', cnicNumber: '3520212345672',
+    phone: '03001000002',
+    vehicle: { make: 'Honda', model: 'Civic', year: 2022, color: 'Silver', plate: 'LHR-2022-BB', seats: 3, fuel: FuelType.PETROL, cc: 1500 },
   },
   {
-    n: 3, firstName: 'Usman',  lastName: 'Ahmed',    gender: Gender.MALE,   userType: UserType.PROFESSIONAL,
-    jobTitle: 'Business Analyst',  officeName: 'Arbisoft',           cnicNumber: '3520312345673',
-    vehicle: { make: 'Suzuki',   model: 'Cultus',   year: 2020, color: 'Red',    plate: 'LHR-2020-CC', seats: 3, fuel: FuelType.CNG,     cc: 1000 },
+    n: 3, firstName: 'Test', lastName: '3', gender: Gender.MALE, userType: UserType.PROFESSIONAL,
+    jobTitle: 'Business Analyst', officeName: 'Arbisoft', cnicNumber: '3520312345673',
+    phone: '03001000003',
+    vehicle: { make: 'Suzuki', model: 'Cultus', year: 2020, color: 'Red', plate: 'LHR-2020-CC', seats: 3, fuel: FuelType.CNG, cc: 1000 },
   },
   {
-    n: 4, firstName: 'Fatima', lastName: 'Malik',    gender: Gender.FEMALE, userType: UserType.STUDENT,
-    degreeDesignation: 'BS Computer Science', universityName: 'LUMS',  cnicNumber: '3520412345674',
-    vehicle: { make: 'Toyota',   model: 'Yaris',    year: 2023, color: 'Blue',   plate: 'LHR-2023-DD', seats: 3, fuel: FuelType.PETROL,  cc: 1300 },
+    n: 4, firstName: 'Test', lastName: '4', gender: Gender.FEMALE, userType: UserType.STUDENT,
+    degreeDesignation: 'BS Computer Science', universityName: 'LUMS', cnicNumber: '3520412345674',
+    phone: '03001000004',
+    vehicle: { make: 'Toyota', model: 'Yaris', year: 2023, color: 'Blue', plate: 'LHR-2023-DD', seats: 3, fuel: FuelType.PETROL, cc: 1300 },
   },
   {
-    n: 5, firstName: 'Hamza',  lastName: 'Raza',     gender: Gender.MALE,   userType: UserType.PROFESSIONAL,
-    jobTitle: 'DevOps Engineer',   officeName: 'TRG Pakistan',       cnicNumber: '3520512345675',
-    vehicle: { make: 'Honda',    model: 'City',     year: 2021, color: 'Black',  plate: 'LHR-2021-EE', seats: 3, fuel: FuelType.PETROL,  cc: 1200 },
-  },
-  {
-    n: 6, firstName: 'Zara',   lastName: 'Nawaz',    gender: Gender.FEMALE, userType: UserType.STUDENT,
-    degreeDesignation: 'BS Electrical Engineering', universityName: 'FAST NUCES', cnicNumber: '3520612345676',
-    vehicle: { make: 'Suzuki',   model: 'Alto',     year: 2022, color: 'Grey',   plate: 'LHR-2022-FF', seats: 3, fuel: FuelType.PETROL,  cc: 660  },
-  },
-  {
-    n: 7, firstName: 'Bilal',  lastName: 'Siddiqui', gender: Gender.MALE,   userType: UserType.PROFESSIONAL,
-    jobTitle: 'Senior Consultant',  officeName: 'PwC Pakistan',      cnicNumber: '3520712345677',
-    vehicle: { make: 'Toyota',   model: 'Fortuner', year: 2020, color: 'White',  plate: 'LHR-2020-GG', seats: 5, fuel: FuelType.DIESEL,  cc: 2700 },
-  },
-  {
-    n: 8, firstName: 'Ayesha', lastName: 'Tariq',    gender: Gender.FEMALE, userType: UserType.PROFESSIONAL,
-    jobTitle: 'UX Designer',        officeName: 'Folio3',             cnicNumber: '3520812345678',
-    vehicle: { make: 'Kia',       model: 'Sportage', year: 2023, color: 'Brown',  plate: 'LHR-2023-HH', seats: 4, fuel: FuelType.PETROL,  cc: 2000 },
-  },
-  {
-    n: 9, firstName: 'Omar',   lastName: 'Farooq',   gender: Gender.MALE,   userType: UserType.STUDENT,
-    degreeDesignation: 'MS Data Science', universityName: 'UET Lahore', cnicNumber: '3520912345679',
-    vehicle: { make: 'Honda',    model: 'BRV',      year: 2021, color: 'Pearl',  plate: 'LHR-2021-II', seats: 5, fuel: FuelType.PETROL,  cc: 1500 },
-  },
-  {
-    n: 10, firstName: 'Nadia', lastName: 'Qureshi',  gender: Gender.FEMALE, userType: UserType.PROFESSIONAL,
-    jobTitle: 'Finance Manager',    officeName: 'HBL',                cnicNumber: '3521012345680',
-    vehicle: { make: 'Hyundai',  model: 'Tucson',   year: 2022, color: 'Blue',   plate: 'LHR-2022-JJ', seats: 4, fuel: FuelType.HYBRID,  cc: 1600 },
+    n: 5, firstName: 'Test', lastName: '5', gender: Gender.MALE, userType: UserType.PROFESSIONAL,
+    jobTitle: 'DevOps Engineer', officeName: 'TRG Pakistan', cnicNumber: '3520512345675',
+    phone: '03001000005',
+    vehicle: { make: 'Honda', model: 'City', year: 2021, color: 'Black', plate: 'LHR-2021-EE', seats: 3, fuel: FuelType.PETROL, cc: 1200 },
   },
 ];
 
@@ -134,6 +111,7 @@ const RIDES_PER_USER: Record<number, Array<{ rideType: RideType; origin: Loc; de
     { rideType: RideType.OFFICE,     origin: L.cavalryGround, dest: L.mallRoad,      daysAhead: 1, hour: 9,  seats: 3, price: 100 },
     { rideType: RideType.OFFICE,     origin: L.cavalryGround, dest: L.gardenTown,    daysAhead: 2, hour: 8,  seats: 3, price: 120, notes: 'Female preferred' },
     { rideType: RideType.OFFICE,     origin: L.gulberg2,      dest: L.cantt,         daysAhead: 3, hour: 18, seats: 3, price: 100 },
+    { rideType: RideType.OFFICE,     origin: L.cavalryGround, dest: L.libertyMarket, daysAhead: 5, hour: 8,  seats: 3, price: 110 },
   ],
   3: [
     { rideType: RideType.OFFICE,     origin: L.joharTown,     dest: L.gulberg3,      daysAhead: 1, hour: 8,  seats: 3, price: 120 },
@@ -145,40 +123,13 @@ const RIDES_PER_USER: Record<number, Array<{ rideType: RideType; origin: Loc; de
     { rideType: RideType.UNIVERSITY, origin: L.modelTown,     dest: L.lums,          daysAhead: 1, hour: 7,  seats: 3, price: 150 },
     { rideType: RideType.UNIVERSITY, origin: L.gulberg3,      dest: L.lums,          daysAhead: 2, hour: 7,  seats: 3, price: 120 },
     { rideType: RideType.UNIVERSITY, origin: L.modelTown,     dest: L.fast,          daysAhead: 3, hour: 7,  seats: 3, price: 130 },
+    { rideType: RideType.UNIVERSITY, origin: L.gulberg2,      dest: L.lums,          daysAhead: 5, hour: 7,  seats: 3, price: 140, notes: 'Morning class schedule' },
   ],
   5: [
     { rideType: RideType.OFFICE,     origin: L.bahriaTown,    dest: L.gulberg3,      daysAhead: 1, hour: 8,  seats: 3, price: 250 },
     { rideType: RideType.OFFICE,     origin: L.bahriaTown,    dest: L.libertyMarket, daysAhead: 2, hour: 8,  seats: 3, price: 250 },
     { rideType: RideType.OFFICE,     origin: L.bahriaTown,    dest: L.mmAlam,        daysAhead: 3, hour: 8,  seats: 3, price: 250, notes: 'Daily 5 days a week' },
     { rideType: RideType.OFFICE,     origin: L.thokarNiaz,    dest: L.gulberg2,      daysAhead: 4, hour: 9,  seats: 3, price: 200 },
-  ],
-  6: [
-    { rideType: RideType.UNIVERSITY, origin: L.wapdaTown,     dest: L.fast,          daysAhead: 1, hour: 7,  seats: 3, price: 100 },
-    { rideType: RideType.UNIVERSITY, origin: L.emeSociety,    dest: L.fast,          daysAhead: 2, hour: 7,  seats: 3, price: 120 },
-    { rideType: RideType.UNIVERSITY, origin: L.joharTown,     dest: L.uet,           daysAhead: 3, hour: 7,  seats: 3, price: 100 },
-  ],
-  7: [
-    { rideType: RideType.OFFICE,     origin: L.dhaPhase1,     dest: L.mallRoad,      daysAhead: 1, hour: 8,  seats: 5, price: 180 },
-    { rideType: RideType.OFFICE,     origin: L.dhaPhase1,     dest: L.shadmanColony, daysAhead: 2, hour: 8,  seats: 5, price: 160 },
-    { rideType: RideType.OFFICE,     origin: L.cavalryGround, dest: L.gardenTown,    daysAhead: 3, hour: 17, seats: 5, price: 120, notes: 'Comfortable SUV ride' },
-    { rideType: RideType.OFFICE,     origin: L.dhaPhase6,     dest: L.mmAlam,        daysAhead: 5, hour: 8,  seats: 5, price: 200 },
-  ],
-  8: [
-    { rideType: RideType.OFFICE,     origin: L.ferozepur,     dest: L.gulberg3,      daysAhead: 1, hour: 8,  seats: 4, price: 150 },
-    { rideType: RideType.OFFICE,     origin: L.raiwind,       dest: L.mmAlam,        daysAhead: 2, hour: 8,  seats: 4, price: 200, notes: 'Hybrid vehicle' },
-    { rideType: RideType.UNIVERSITY, origin: L.ferozepur,     dest: L.comsats,       daysAhead: 3, hour: 7,  seats: 4, price: 100 },
-  ],
-  9: [
-    { rideType: RideType.UNIVERSITY, origin: L.township,      dest: L.uet,           daysAhead: 1, hour: 7,  seats: 5, price: 80  },
-    { rideType: RideType.UNIVERSITY, origin: L.emeSociety,    dest: L.uet,           daysAhead: 2, hour: 7,  seats: 5, price: 100 },
-    { rideType: RideType.UNIVERSITY, origin: L.joharTown,     dest: L.lums,          daysAhead: 3, hour: 7,  seats: 5, price: 120, notes: 'Pickup near Johar Chowk' },
-    { rideType: RideType.UNIVERSITY, origin: L.wapdaTown,     dest: L.comsats,       daysAhead: 4, hour: 7,  seats: 5, price: 90  },
-  ],
-  10: [
-    { rideType: RideType.OFFICE,     origin: L.shadmanColony, dest: L.dhaPhase5,     daysAhead: 1, hour: 8,  seats: 4, price: 180 },
-    { rideType: RideType.OFFICE,     origin: L.cantt,         dest: L.gulberg3,      daysAhead: 2, hour: 8,  seats: 4, price: 120 },
-    { rideType: RideType.OFFICE,     origin: L.shadmanColony, dest: L.libertyMarket, daysAhead: 3, hour: 8,  seats: 4, price: 100, notes: 'Hybrid — eco-friendly' },
-    { rideType: RideType.OFFICE,     origin: L.cantt,         dest: L.mmAlam,        daysAhead: 4, hour: 17, seats: 4, price: 130 },
   ],
 };
 
@@ -244,7 +195,7 @@ async function seed() {
 
   for (const u of USERS) {
     const email    = `test${u.n}@app.com`;
-    const password = await bcrypt.hash(`test${u.n}`, 12);
+    const password = await bcrypt.hash(`Test${u.n}`, 12);
 
     // Build user
     const user = userRepo.create({
@@ -259,16 +210,17 @@ async function seed() {
       isEmailVerified:    true,
       isPhoneVerified:    true,
       isActive:           true,
+      isSuspended:        false,
       trustScore:         75 + u.n,
-      phone:              `0300000000${u.n}`,
+      phone:              u.phone,
       verificationSubmittedAt: new Date(),
       // Professional fields
       ...(u.userType === UserType.PROFESSIONAL && {
-        jobTitle:   (u as any).jobTitle,
-        officeName: (u as any).officeName,
+        jobTitle:     (u as any).jobTitle,
+        officeName:   (u as any).officeName,
         companyEmail: email,
-        cnicNumber: (u as any).cnicNumber,
-        linkedinUrl: `https://linkedin.com/in/test${u.n}`,
+        cnicNumber:   (u as any).cnicNumber,
+        linkedinUrl:  `https://linkedin.com/in/test${u.n}`,
       }),
       // Student fields
       ...(u.userType === UserType.STUDENT && {
@@ -322,14 +274,14 @@ async function seed() {
         pricePerSeat:          r.price,
         distanceKm:            km,
         estimatedDurationMins: Math.round(km * 3.5),
-        isRecurring:           false,
+        isRecurring:           true,
         notes:                 r.notes,
       } as any));
       totalRides++;
     }
 
     console.log(
-      `  ✅  test${u.n}@app.com  /  test${u.n}  |  ${u.firstName} ${u.lastName}  |  ${v.make} ${v.model}  |  ${rides.length} rides`,
+      `  ✅  test${u.n}@app.com  /  Test${u.n}  |  ${u.firstName} ${u.lastName}  |  ${v.make} ${v.model}  |  ${rides.length} rides`,
     );
     totalUsers++;
   }
@@ -341,8 +293,8 @@ async function seed() {
   console.log(`  Rides created : ${totalRides}`);
   console.log('─────────────────────────────────────────────────');
   console.log('\n  Credentials (email / password):');
-  for (let i = 1; i <= 10; i++) {
-    console.log(`  test${i}@app.com  /  test${i}`);
+  for (let i = 1; i <= 5; i++) {
+    console.log(`  test${i}@app.com  /  Test${i}`);
   }
   console.log();
 }

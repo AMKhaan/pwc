@@ -7,46 +7,41 @@ import '../../../core/theme/app_theme.dart';
 
 class _Page {
   final IconData icon;
-  final String label;
   final String title;
   final String body;
+  final Color heroStart;
+  final Color heroEnd;
 
   const _Page({
     required this.icon,
-    required this.label,
     required this.title,
     required this.body,
+    required this.heroStart,
+    required this.heroEnd,
   });
 }
 
 const _pages = [
   _Page(
     icon: Icons.directions_car_rounded,
-    label: '01',
-    title: 'Welcome to\nRideSync',
-    body:
-        'Pakistan\'s first verified professional carpooling platform. Commute smarter with people you can trust.',
+    title: 'Share the Road',
+    body: 'Connect with verified colleagues and classmates for safe, trusted carpooling every day.',
+    heroStart: AppTheme.primary,
+    heroEnd: Color(0xFF1E40AF),
   ),
   _Page(
     icon: Icons.verified_user_rounded,
-    label: '02',
-    title: 'Verified\nCommunity',
-    body:
-        'Every user is ID-verified and LinkedIn-checked. No strangers — only verified colleagues and classmates.',
+    title: 'Know Before\nYou Go',
+    body: 'Every user is ID-verified. Browse driver profiles, ratings, and real-time routes before you book.',
+    heroStart: AppTheme.primary,
+    heroEnd: Color(0xFF1E40AF),
   ),
   _Page(
-    icon: Icons.alt_route_rounded,
-    label: '03',
-    title: 'Three Ways\nto Ride',
-    body:
-        'CommuteShare for office routes. CampusRide for university. DriveDesk for productive commutes with Q&A.',
-  ),
-  _Page(
-    icon: Icons.savings_rounded,
-    label: '04',
-    title: 'Save Money.\nTravel Safe.',
-    body:
-        'Split fuel costs with verified co-workers. Complete your profile to start posting or booking rides today.',
+    icon: Icons.people_alt_rounded,
+    title: 'Ride with People\nYou Trust',
+    body: 'Split fuel costs with verified co-workers. Complete your profile and start your first ride today.',
+    heroStart: AppTheme.primary,
+    heroEnd: AppTheme.tertiary,
   ),
 ];
 
@@ -88,202 +83,229 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final page = _pages[_current];
     return Scaffold(
-      backgroundColor: AppTheme.primary,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ─── Top bar ────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Page label badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      _pages[_current].label,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ),
-                  if (_current < _pages.length - 1)
-                    TextButton(
-                      onPressed: _complete,
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.white.withOpacity(0.7),
-                      ),
-                      child: const Text('Skip'),
-                    ),
-                ],
-              ),
-            ),
-
-            // ─── Pages ──────────────────────────────────────────────────
-            Expanded(
-              child: PageView.builder(
-                controller: _pageCtrl,
-                onPageChanged: (i) => setState(() => _current = i),
-                itemCount: _pages.length,
-                itemBuilder: (_, i) => _PageView(page: _pages[i]),
-              ),
-            ),
-
-            // ─── Bottom controls ─────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(28, 0, 28, 32),
-              child: Column(
-                children: [
-                  // Dots
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_pages.length, (i) {
-                      final isActive = i == _current;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: isActive ? 28 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? Colors.white
-                              : Colors.white.withOpacity(0.35),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      );
-                    }),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // CTA button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: ElevatedButton(
-                      onPressed: _next,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppTheme.primaryDark,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _current < _pages.length - 1
-                                ? 'Next'
-                                : 'Get Started',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+      backgroundColor: AppTheme.background,
+      body: AnimatedContainer(
+        duration: const Duration(milliseconds: 400),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [page.heroStart, page.heroEnd],
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              // ─── Skip button ─────────────────────────────────────────────
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _current < _pages.length - 1
+                      ? TextButton(
+                          onPressed: _complete,
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white.withValues(alpha: 0.8),
                           ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            _current < _pages.length - 1
-                                ? Icons.arrow_forward_rounded
-                                : Icons.rocket_launch_rounded,
-                            size: 18,
+                          child: const Text('Skip'),
+                        )
+                      : const SizedBox(height: 40),
+                ),
+              ),
+
+              // ─── PageView with hero icon ──────────────────────────────────
+              Expanded(
+                flex: 5,
+                child: PageView.builder(
+                  controller: _pageCtrl,
+                  onPageChanged: (i) => setState(() => _current = i),
+                  itemCount: _pages.length,
+                  itemBuilder: (_, i) => _HeroPage(page: _pages[i]),
+                ),
+              ),
+
+              // ─── White bottom card ────────────────────────────────────────
+              Container(
+                decoration: const BoxDecoration(
+                  color: AppTheme.surface,
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(32)),
+                ),
+                padding: const EdgeInsets.fromLTRB(28, 28, 28, 0),
+                child: SafeArea(
+                  top: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Page text
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: Column(
+                          key: ValueKey(_current),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _pages[_current].title,
+                              style: const TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textPrimary,
+                                height: 1.2,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              _pages[_current].body,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.textSecondary,
+                                height: 1.6,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      // Dots + CTA row
+                      Row(
+                        children: [
+                          // Dots
+                          Row(
+                            children: List.generate(_pages.length, (i) {
+                              final isActive = i == _current;
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                margin:
+                                    const EdgeInsets.only(right: 6),
+                                width: isActive ? 24 : 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: isActive
+                                      ? page.heroStart
+                                      : AppTheme.divider,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              );
+                            }),
+                          ),
+
+                          const Spacer(),
+
+                          // CTA button
+                          SizedBox(
+                            height: 52,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                    colors: [page.heroStart, page.heroEnd]),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: page.heroStart.withValues(alpha: 0.35),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: ElevatedButton(
+                                onPressed: _next,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      _current < _pages.length - 1
+                                          ? 'Next'
+                                          : 'Get Started',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      _current < _pages.length - 1
+                                          ? Icons.arrow_forward_rounded
+                                          : Icons.rocket_launch_rounded,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                    ),
+
+                      const SizedBox(height: 24),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// ─── Individual page content ──────────────────────────────────────────────────
+// ─── Hero page widget ─────────────────────────────────────────────────────────
 
-class _PageView extends StatelessWidget {
+class _HeroPage extends StatelessWidget {
   final _Page page;
-  const _PageView({super.key, required this.page});
+  const _HeroPage({required this.page});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 36),
+    return Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Icon illustration
-          Container(
-            width: 160,
-            height: 160,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.1),
-            ),
-            child: Center(
-              child: Container(
-                width: 116,
-                height: 116,
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 180,
+                height: 180,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
+              ),
+              Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.18),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
+                      color: Colors.white.withValues(alpha: 0.2),
+                      blurRadius: 40,
+                      spreadRadius: 4,
                     ),
                   ],
                 ),
-                child: Icon(
-                  page.icon,
-                  size: 56,
-                  color: Colors.white,
-                ),
               ),
-            ),
-          ),
-
-          const SizedBox(height: 52),
-
-          // Title
-          Text(
-            page.title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              height: 1.15,
-              letterSpacing: -0.5,
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          // Body
-          Text(
-            page.body,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.white.withOpacity(0.82),
-              height: 1.65,
-            ),
+              Icon(page.icon, size: 68, color: Colors.white),
+            ],
           ),
         ],
       ),
