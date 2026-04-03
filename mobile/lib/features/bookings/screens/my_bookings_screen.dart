@@ -37,177 +37,197 @@ class _MyBookingsScreenState extends ConsumerState<MyBookingsScreen> {
     } catch (_) {}
   }
 
+  Future<void> _refresh() => ref.refresh(myBookingsProvider.future);
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(myBookingsProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: CustomScrollView(
-        slivers: [
-          // ─── Gradient header ────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppTheme.primary, AppTheme.tertiary],
-                ),
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(28)),
-              ),
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                  child: Row(
-                    children: [
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'My Bookings',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          Text(
-                            'Rides you booked',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Consumer(builder: (context, ref, _) {
-                        final count = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
-                        return GestureDetector(
-                          onTap: () => context.push('/notifications'),
-                          child: Badge(
-                            isLabelVisible: count > 0,
-                            label: Text(count > 9 ? '9+' : '$count'),
-                            child: Container(
-                              width: 46,
-                              height: 46,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.18),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: const Icon(Icons.notifications_outlined,
-                                  color: Colors.white, size: 22),
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            // ─── Gradient header ──────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppTheme.primary, AppTheme.tertiary],
                   ),
+                  borderRadius:
+                      BorderRadius.vertical(bottom: Radius.circular(28)),
                 ),
-              ),
-            ),
-          ),
-
-          // ─── Feature hint ──────────────────────────────────────────────
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.only(top: 4),
-              child: FeatureHint(
-                featureKey: 'bookings',
-                icon: Icons.bookmark_outline,
-                title: 'Your Booked Rides',
-                description:
-                    'Rides you\'ve booked appear here. Track your booking status and get in touch with the driver before your trip.',
-                color: AppTheme.tertiary,
-              ),
-            ),
-          ),
-
-          // ─── Content ────────────────────────────────────────────────────
-          SliverFillRemaining(
-            child: state.when(
-              data: (bookings) {
-                if (bookings.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                    child: Row(
                       children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: AppTheme.tertiary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: const Icon(Icons.bookmark_border,
-                              size: 40, color: AppTheme.tertiary),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text('No bookings yet',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.textPrimary)),
-                        const SizedBox(height: 6),
-                        const Text('Browse rides and book your first trip!',
-                            style: TextStyle(
-                                fontSize: 13,
-                                color: AppTheme.textSecondary)),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          height: 48,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(colors: [
-                                AppTheme.tertiary,
-                                Color(0xFF4338CA)
-                              ]),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: ElevatedButton.icon(
-                              onPressed: () => context.go('/home'),
-                              icon: const Icon(Icons.search,
-                                  color: Colors.white, size: 18),
-                              label: const Text('Find a Ride',
-                                  style: TextStyle(color: Colors.white)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 24),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14)),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'My Bookings',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
                               ),
                             ),
-                          ),
+                            Text(
+                              'Rides you booked',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
+                        const Spacer(),
+                        Consumer(builder: (context, ref, _) {
+                          final count = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
+                          return GestureDetector(
+                            onTap: () => context.push('/notifications'),
+                            child: Badge(
+                              isLabelVisible: count > 0,
+                              label: Text(count > 9 ? '9+' : '$count'),
+                              child: Container(
+                                width: 46,
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(Icons.notifications_outlined,
+                                    color: Colors.white, size: 22),
+                              ),
+                            ),
+                          );
+                        }),
                       ],
                     ),
-                  );
-                }
-                return RefreshIndicator(
-                  onRefresh: () => ref.refresh(myBookingsProvider.future),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                    itemCount: bookings.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (_, i) =>
-                        _BookingCard(booking: bookings[i]),
                   ),
-                );
-              },
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(
-                  child: Text(e.toString(),
-                      style: const TextStyle(color: AppTheme.error))),
+                ),
+              ),
             ),
-          ),
-        ],
+
+            // ─── Feature hint ────────────────────────────────────────────
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: FeatureHint(
+                  featureKey: 'bookings',
+                  icon: Icons.bookmark_outline,
+                  title: 'Your Booked Rides',
+                  description:
+                      'Rides you\'ve booked appear here. Track your booking status and get in touch with the driver before your trip.',
+                  color: AppTheme.tertiary,
+                ),
+              ),
+            ),
+
+            // ─── Content ──────────────────────────────────────────────────
+            ...state.when(
+              data: (bookings) {
+                if (bookings.isEmpty) {
+                  return [
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: AppTheme.tertiary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: const Icon(Icons.bookmark_border,
+                                  size: 40, color: AppTheme.tertiary),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text('No bookings yet',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.textPrimary)),
+                            const SizedBox(height: 6),
+                            const Text('Browse rides and book your first trip!',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppTheme.textSecondary)),
+                            const SizedBox(height: 24),
+                            SizedBox(
+                              height: 48,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(colors: [
+                                    AppTheme.tertiary,
+                                    Color(0xFF4338CA)
+                                  ]),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: ElevatedButton.icon(
+                                  onPressed: () => context.go('/home'),
+                                  icon: const Icon(Icons.search,
+                                      color: Colors.white, size: 18),
+                                  label: const Text('Find a Ride',
+                                      style: TextStyle(color: Colors.white)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    shadowColor: Colors.transparent,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(14)),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ];
+                }
+                return [
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                    sliver: SliverList.separated(
+                      itemCount: bookings.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (_, i) => _BookingCard(booking: bookings[i]),
+                    ),
+                  ),
+                ];
+              },
+              loading: () => [
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ],
+              error: (e, _) => [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Text(e.toString(),
+                        style: const TextStyle(color: AppTheme.error)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

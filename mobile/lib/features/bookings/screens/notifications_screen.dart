@@ -118,82 +118,75 @@ class _NotificationsScreenState
           // ─── Content ─────────────────────────────────────────────────
           Expanded(
             child: state.when(
-              data: (notifications) {
-                if (notifications.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color:
-                                AppTheme.tertiary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(24),
+              data: (notifications) => RefreshIndicator(
+                onRefresh: () => ref.refresh(notificationsProvider.future),
+                child: notifications.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.55,
+                            child: const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.notifications_none_outlined,
+                                      size: 56, color: AppTheme.textHint),
+                                  SizedBox(height: 16),
+                                  Text('No notifications yet',
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppTheme.textPrimary)),
+                                  SizedBox(height: 6),
+                                  Text('Booking updates will appear here',
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          color: AppTheme.textSecondary)),
+                                ],
+                              ),
+                            ),
                           ),
-                          child: const Icon(
-                              Icons.notifications_none_outlined,
-                              size: 40,
-                              color: AppTheme.tertiary),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text('No notifications yet',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.textPrimary)),
-                        const SizedBox(height: 6),
-                        const Text(
-                            'Booking updates will appear here',
-                            style: TextStyle(
-                                fontSize: 13,
-                                color: AppTheme.textSecondary)),
-                      ],
-                    ),
-                  );
-                }
-                return RefreshIndicator(
-                  onRefresh: () =>
-                      ref.refresh(notificationsProvider.future),
-                  child: ListView.separated(
-                    padding:
-                        const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                    itemCount: notifications.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: 10),
-                    itemBuilder: (_, i) =>
-                        _NotificationCard(notification: notifications[i]),
-                  ),
-                );
-              },
+                        ],
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                        itemCount: notifications.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 10),
+                        itemBuilder: (_, i) =>
+                            _NotificationCard(notification: notifications[i]),
+                      ),
+              ),
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
-                  child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.wifi_off_rounded,
-                      size: 40, color: AppTheme.textHint),
-                  const SizedBox(height: 12),
-                  Text(e.toString(),
-                      style:
-                          const TextStyle(color: AppTheme.textSecondary)),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: () =>
-                        ref.invalidate(notificationsProvider),
-                    icon: const Icon(Icons.refresh_rounded, size: 16),
-                    label: const Text('Retry'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.tertiary,
-                      side: const BorderSide(color: AppTheme.tertiary),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.wifi_off_rounded,
+                        size: 40, color: AppTheme.textHint),
+                    const SizedBox(height: 12),
+                    Text(e.toString(),
+                        style:
+                            const TextStyle(color: AppTheme.textSecondary)),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          ref.invalidate(notificationsProvider),
+                      icon: const Icon(Icons.refresh_rounded, size: 16),
+                      label: const Text('Retry'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.tertiary,
+                        side: const BorderSide(color: AppTheme.tertiary),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
-                  ),
-                ],
-              )),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

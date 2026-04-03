@@ -37,11 +37,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return 'Good evening';
   }
 
-  void _loadRides() {
-    ref.read(ridesProvider.notifier).searchRides(
-          rideType: _selectedType == 'ALL' ? null : _selectedType,
-        );
-  }
+  Future<void> _loadRides() => ref.read(ridesProvider.notifier).searchRides(
+        rideType: _selectedType == 'ALL' ? null : _selectedType,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -50,8 +48,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: CustomScrollView(
-        slivers: [
+      body: RefreshIndicator(
+        onRefresh: _loadRides,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
           // ─── Gradient header ────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Container(
@@ -371,6 +372,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
