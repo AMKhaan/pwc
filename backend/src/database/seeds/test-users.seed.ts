@@ -157,7 +157,7 @@ async function seed() {
 
   const nonAdminUsers = await userRepo
     .createQueryBuilder('u')
-    .where('u.userType != :type', { type: 'ADMIN' })
+    .where('u.isAdmin = false OR u.isAdmin IS NULL')
     .getMany();
 
   if (nonAdminUsers.length > 0) {
